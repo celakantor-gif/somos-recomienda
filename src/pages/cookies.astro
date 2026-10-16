@@ -1,14 +1,13 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
 import { SITE_TITLE } from '../consts';
 ---
 
-<Layout
+<BaseLayout
 	title={`Política de Cookies | ${SITE_TITLE}`}
 	description={`Información detallada sobre el uso de cookies técnicas, analíticas y de publicidad (Google AdSense y Amazon) en ${SITE_TITLE}.`}
-	showRails={false}
 >
-	<div class="max-w-4xl mx-auto px-4 py-8 sm:py-12">
+	<main class="max-w-4xl mx-auto px-4 py-20 text-gray-300">
 		<header class="text-center mb-10">
 			<span class="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#00C988]/15 text-[#00C988] border border-[#00C988]/30 mb-4">
 				Guía de Cookies & LSSI-CE
@@ -169,5 +168,5 @@ import { SITE_TITLE } from '../consts';
 				</p>
 			</section>
 		</div>
-	</div>
-</Layout>
+	</main>
+</BaseLayout>

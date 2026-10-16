@@ -1,13 +1,12 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<Layout
-	title="Sobre Nosotros | Claramente"
-	description="En Claramente nacimos con un objetivo simple: ir directo al grano. Conoce a nuestro equipo editorial y nuestro compromiso con la información útil."
-	showRails={false}
+<BaseLayout
+	title="Sobre Nosotros | Recomendación"
+	description="En Recomendación seleccionamos y analizamos los mejores productos del mercado para que compres con seguridad."
 >
-	<div class="max-w-3xl mx-auto px-4 py-8 sm:py-12">
+	<main class="max-w-4xl mx-auto px-4 py-20 text-gray-300">
 		<header class="text-center mb-10">
 			<span class="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#00C988]/15 text-[#00C988] border border-[#00C988]/30 mb-4">
 				Equipo Claramente
@@ -41,5 +40,5 @@ import Layout from '../layouts/Layout.astro';
 				No publicamos por publicar. Detrás de cada una de nuestras guías hay un proceso riguroso para asegurar que la información sea fresca, precisa y, sobre todo, fácil de entender. Queremos ser ese aliado de confianza al que acudes cuando necesitas resolver una duda a la primera. Sin rodeos, sin complicaciones. Simplemente, la mejor información a tu alcance.
 			</p>
 		</div>
-	</div>
-</Layout>
+	</main>
+</BaseLayout>
