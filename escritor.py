@@ -22,14 +22,12 @@ import unicodedata
 from datetime import datetime
 from typing import Dict, Set, List, Optional
 import requests
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 from openai import OpenAI
-
-# ==============================================================================
-# CONFIGURACIÓN GENERAL Y CREDENCIALES
-# ==============================================================================
-
-load_dotenv()
 
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 PIXABAY_API_KEY = os.getenv("PIXABAY_API_KEY")
@@ -358,8 +356,12 @@ VEREDICTO:
         memoria_imagenes=memoria_imagenes,
     )
 
-    # Inserción obligatoria de botón Above the Fold CTA con el ASIN del CSV
-    amazon_url = f"https://amazon.es/dp/{asin_amazon}/?tag={amazon_tag}"
+    # Inserción obligatoria de botón Above the Fold CTA con el ASIN o búsqueda de afiliado en Amazon
+    if asin_amazon:
+        amazon_url = f"https://amazon.es/dp/{asin_amazon}/?tag={amazon_tag}"
+    else:
+        from urllib.parse import quote_plus
+        amazon_url = f"https://www.amazon.es/s?k={quote_plus(keyword)}&tag={amazon_tag}"
     cta_above_the_fold = (
         f'<a href="{amazon_url}" class="btn-amazon-cta">'
         f'🔥 Ver Mejor Precio y Ofertas en Amazon</a>'
@@ -520,11 +522,10 @@ def agente_reviewer(
             filas_omitidas += 1
             continue
 
-        # Manejo de Errores: Fila sin asin_amazon (obligatorio para afiliación)
+        # Manejo de asin_amazon: si falta (ej. autopiloto), avisar y usar búsqueda transaccional
         if not asin_amazon:
-            print(f"   [FILA {idx} SALTADA] Falta 'asin_amazon' para la keyword '{keyword}'. Fila omitida.")
-            filas_omitidas += 1
-            continue
+            print(f"   [AVISO] Fila {idx} sin 'asin_amazon'. Se generará enlace de búsqueda transaccional para '{keyword}'.")
+            asin_amazon = ""
 
         print(f"\n[{idx}/{len(rows)}] Procesando: '{keyword}' (Categoría: {categoria} | ASIN: {asin_amazon})...")
 

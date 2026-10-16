@@ -1,0 +1,38 @@
+name: Publicador Automático Diario
+
+on:
+  schedule:
+    - cron: '0 4 * * *' # Todos los días a las 04:00 AM UTC
+  workflow_dispatch: # Botón manual
+
+jobs:
+  generar-y-publicar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v3
+
+      - name: Instalar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Instalar dependencias
+        run: pip install openai requests
+
+      - name: Ejecutar Piloto Automático
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          AMAZON_AFFILIATE_TAG: ${{ secrets.AMAZON_AFFILIATE_TAG }}
+        run: python autopiloto.py
+
+      - name: Subir a Producción
+        run: |
+          git config --global user.name "Robot Recomendacion"
+          git config --global user.email "bot@recomendacion.com"
+          git add src/content/blog/ public/img/ keywords_productos.csv
+          git commit -m "🤖 Auto-publicación: Nuevo artículo añadido" || echo "Sin cambios"
+          git push
