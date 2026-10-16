@@ -1,6 +1,6 @@
 ---
 import { getCollection, type CollectionEntry } from 'astro:content';
-import Layout from '../../layouts/Layout.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import CategoryCarousel from '../../components/CategoryCarousel.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
@@ -19,31 +19,25 @@ export async function getStaticPaths() {
 	const categoryMap = new Map<string, { name: string; slug: string; posts: CollectionEntry<'blog'>[] }>();
 
 	const PREDEFINED = [
-		{ name: 'Noticias', slug: 'noticias' },
-		{ name: 'Economía', slug: 'economia' },
-		{ name: 'Deportes', slug: 'deportes' },
+		{ name: 'Bricolaje y Herramientas', slug: 'bricolaje-y-herramientas' },
+		{ name: 'Informática', slug: 'informatica' },
+		{ name: 'Productos para Mascotas', slug: 'productos-para-mascotas' },
+		{ name: 'Mascotas', slug: 'mascotas' },
+		{ name: 'Hogar y Cocina', slug: 'hogar-y-cocina' },
 		{ name: 'Deportes y Aire Libre', slug: 'deportes-y-aire-libre' },
-		{ name: 'Salud', slug: 'salud' },
+		{ name: 'Cuidado Personal', slug: 'cuidado-personal' },
 		{ name: 'Salud y Cuidado Personal', slug: 'salud-y-cuidado-personal' },
 		{ name: 'Consejos', slug: 'consejos' },
-		{ name: 'Informática', slug: 'informatica' },
-		{ name: 'Mascotas', slug: 'mascotas' },
-		{ name: 'Productos para Mascotas', slug: 'productos-para-mascotas' },
-		{ name: 'Bricolaje y Herramientas', slug: 'bricolaje-y-herramientas' },
-		{ name: 'Electrónica', slug: 'electronica' },
-		{ name: 'Hogar y Cocina', slug: 'hogar-y-cocina' },
 	];
 
 	for (const def of PREDEFINED) {
 		let catPosts: CollectionEntry<'blog'>[] = [];
 		if (def.slug === 'consejos') {
-			// Consejos aglutina lógicamente todas las guías de compra y contenido transaccional
 			catPosts = posts.filter((post) => {
 				const s = slugifyCategory(post.data.category || 'General');
 				return s !== 'noticias' && s !== 'economia' && s !== 'deportes' && s !== 'salud';
 			});
 		} else {
-			// Igualdad estricta (===): aislar cada categoría
 			catPosts = posts.filter((post) => slugifyCategory(post.data.category || 'General') === def.slug);
 		}
 
@@ -98,251 +92,115 @@ const { categoryName, categorySlug, posts, allCategories } = Astro.props;
 const { categoria = categorySlug } = Astro.params;
 ---
 
-<Layout
-	title={`${categoryName} | Guías y Artículos en ${SITE_TITLE}`}
-	description={`Descubre las mejores guías de compra, comparativas y análisis sobre ${categoryName} en ${SITE_TITLE}. Opiniones independientes.`}
+<BaseLayout
+	title={`${categoryName} | Guías y Comparativas en ${SITE_TITLE}`}
+	description={`Descubre las mejores recomendaciones, comparativas independientes y análisis sobre ${categoryName} en ${SITE_TITLE}.`}
 >
-	<style>
-		main {
-			width: 100%;
-			max-width: 1100px;
-			padding: 2rem 0 4rem;
-			margin: 0 auto;
-		}
-			.category-header {
-				text-align: center;
-				max-width: 800px;
-				margin: 0 auto 2.5rem;
-				padding-top: 1rem;
-			}
-			.category-badge {
-				display: inline-block;
-				padding: 0.35rem 0.9rem;
-				border-radius: 999px;
-				background: rgba(0, 201, 136, 0.12);
-				color: #00c988;
-				font-size: 0.85rem;
-				font-weight: 700;
-				letter-spacing: 0.04em;
-				text-transform: uppercase;
-				margin-bottom: 1rem;
-				border: 1px solid rgba(0, 201, 136, 0.3);
-			}
-			.category-badge.badge-noticias {
-				background: rgba(37, 99, 235, 0.2);
-				color: #93c5fd;
-				border-color: rgba(59, 130, 246, 0.4);
-			}
-			.category-header h1 {
-				font-size: 2.8rem;
-				line-height: 1.2;
-				margin: 0 0 0.75rem;
-				font-weight: 900;
-				color: #ffffff;
-				letter-spacing: -0.02em;
-			}
-			.category-header p {
-				color: #d1d5db;
-				font-size: 1.15rem;
-				margin: 0;
-			}
-			.categories-nav {
-				display: flex;
-				flex-wrap: wrap;
-				justify-content: center;
-				gap: 0.6rem;
-				margin: 0 auto 3rem;
-				padding-bottom: 1.5rem;
-				border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-			}
-			.cat-pill {
-				display: inline-flex;
-				align-items: center;
-				gap: 0.4rem;
-				padding: 0.5rem 1rem;
-				border-radius: 999px;
-				background: rgba(255, 255, 255, 0.05);
-				border: 1px solid rgba(255, 255, 255, 0.1);
-				color: #e5e7eb;
-				text-decoration: none;
-				font-size: 0.9rem;
-				font-weight: 600;
-				transition: all 0.2s ease;
-			}
-			.cat-pill:hover {
-				background: rgba(0, 201, 136, 0.15);
-				color: #00c988;
-				border-color: rgba(0, 201, 136, 0.4);
-			}
-			.cat-pill.active {
-				background: var(--accent);
-				color: #0a0a0a;
-				border-color: var(--accent);
-				font-weight: 800;
-			}
-			.count {
-				font-size: 0.75rem;
-				opacity: 0.75;
-			}
-			.grid {
-				display: grid;
-				grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-				gap: 2rem;
-				list-style: none;
-				margin: 0;
-				padding: 0;
-			}
-			.card {
-				display: flex;
-				flex-direction: column;
-				height: 100%;
-				overflow: hidden;
-				border-radius: 1rem;
-				background: rgba(255, 255, 255, 0.05);
-				backdrop-filter: blur(16px);
-				-webkit-backdrop-filter: blur(16px);
-				border: 1px solid rgba(255, 255, 255, 0.1);
-				box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
-				text-decoration: none;
-				transition:
-					transform 0.25s ease,
-					box-shadow 0.25s ease,
-					border-color 0.25s ease,
-					background 0.25s ease;
-			}
-			.card:hover {
-				transform: translateY(-6px);
-				background: rgba(255, 255, 255, 0.08);
-				border-color: rgba(0, 201, 136, 0.5);
-				box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 201, 136, 0.25);
-			}
-			.card img,
-			.card-img {
-				width: 100%;
-				height: 192px;
-				object-fit: cover;
-				display: block;
-			}
-			.card-body {
-				display: flex;
-				flex-direction: column;
-				flex: 1;
-				padding: 1.3rem 1.4rem 1.4rem;
-			}
-			.card h2 {
-				margin: 0 0 0.6rem;
-				font-size: 1.25rem;
-				line-height: 1.35;
-				color: #ffffff;
-				font-weight: 800;
-				transition: color 0.2s ease;
-			}
-			.card:hover h2 {
-				color: var(--accent);
-			}
-			.card p {
-				margin: 0 0 1.25rem;
-				color: #d1d5db;
-				font-size: 0.95rem;
-				line-height: 1.55;
-				flex: 1;
-			}
-			.meta {
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				font-size: 0.85rem;
-				color: #9ca3af;
-				padding-top: 0.75rem;
-				border-top: 1px solid rgba(255, 255, 255, 0.08);
-			}
-			.more {
-				color: var(--accent);
-				font-weight: 700;
-				transition: color 0.2s ease;
-			}
-			.card:hover .more {
-				color: #34d399;
-			}
-			@media (max-width: 720px) {
-				.category-header h1 {
-					font-size: 2.1rem;
-				}
-				.grid {
-					grid-template-columns: 1fr;
-					gap: 1.5rem;
-				}
-			}
-	</style>
-	<main>
-			<section class="category-header">
-				<span class:list={['category-badge', { 'badge-noticias': categorySlug === 'noticias' }]}>
-					{categorySlug === 'noticias' ? 'Actualidad' : 'Temática'}
-				</span>
-				<h1>{categoryName}</h1>
-				<p>
-					{
-						categorySlug === 'noticias'
-							? 'Actualidad de España y el mundo: noticias objetivas, contrastadas y directas al grano.'
-							: categorySlug === 'consejos'
-							? 'Guías de compra, análisis de productos y recomendaciones prácticas para tomar las mejores decisiones.'
-							: `Todas las guías prácticas y respuestas directas sobre ${categoryName.toLowerCase()}.`
-					}
-				</p>
-			</section>
-
-			<CategoryCarousel category={categoria} />
-
-			<nav class="categories-nav" aria-label="Temáticas disponibles">
-				<a href="/" class="cat-pill">Todas</a>
+	<main class="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-white">
+		<!-- CABECERA DE CATEGORÍA -->
+		<header class="text-center max-w-3xl mx-auto mb-10">
+			<span class="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-teal-400/15 text-teal-400 border border-teal-400/30 mb-4">
+				Categoría • {categoryName}
+			</span>
+			<h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight mb-4">
+				{categoryName}
+			</h1>
+			<p class="text-gray-400 text-base sm:text-lg leading-relaxed">
 				{
-					allCategories.map((cat) => (
-						<a
-							href={`/categoria/${cat.slug}`}
-							class:list={['cat-pill', { active: cat.slug === categorySlug }]}
-						>
-							<span>{cat.name}</span>
-							<span class="count">({cat.count})</span>
-						</a>
-					))
+					categorySlug === 'consejos'
+						? 'Guías de compra, análisis de productos y recomendaciones prácticas para elegir con criterio.'
+						: `Todas las guías prácticas, análisis de producto y recomendaciones objetivas sobre ${categoryName.toLowerCase()}.`
 				}
-			</nav>
+			</p>
+		</header>
 
+		<CategoryCarousel category={categoria} />
+
+		<!-- NAVEGACIÓN ENTRE CATEGORÍAS -->
+		<nav class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-12 pb-6 border-b border-white/10" aria-label="Temáticas disponibles">
+			<a href="/" class="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-white/5 hover:bg-teal-400/15 hover:text-teal-400 border border-white/10 transition-colors">
+				Todas
+			</a>
 			{
-				posts.length > 0 ? (
-					<ul class="grid">
-						{
-							posts.map((post) => (
-								<li>
-									<a class="card" href={`/blog/${post.id}/`}>
-										{post.data.heroImage && (
-											<img src={post.data.heroImage} alt={post.data.title} class="card-img" loading="lazy" />
-										)}
-										<div class="card-body">
-											<h2>{post.data.title}</h2>
-											<p>{post.data.description}</p>
-											<div class="meta">
-												<FormattedDate date={post.data.pubDate} />
-												<span class="more">Leer guía →</span>
-											</div>
-										</div>
-									</a>
-								</li>
-							))
-						}
-					</ul>
-				) : (
-					<div class="text-center py-16 px-6 bg-white/[0.03] rounded-2xl border border-white/10 max-w-xl mx-auto my-12 shadow-xl">
-						<span class="inline-block p-3 rounded-full bg-white/5 border border-white/10 text-3xl mb-3">✍️</span>
-						<h2 class="text-xl font-bold text-white mb-2">Próximamente nuevos artículos</h2>
-						<p class="text-gray-400 text-sm leading-relaxed mb-6">
-							Nuestro equipo editorial está redactando las mejores investigaciones y guías para {categoryName}.
-						</p>
-						<a href="/" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#00C988] text-gray-950 font-bold text-sm hover:bg-[#00b077] transition-all no-underline shadow-lg">
-							← Explorar todas las guías
-						</a>
-					</div>
-				)
+				allCategories.map((cat) => (
+					<a
+						href={`/categoria/${cat.slug}`}
+						class:list={[
+							'px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all border',
+							cat.slug === categorySlug
+								? 'bg-teal-400 text-gray-950 font-bold border-teal-400 shadow-md shadow-teal-500/20'
+								: 'bg-white/5 text-gray-300 hover:text-white hover:bg-white/10 border-white/10'
+						]}
+					>
+						<span>{cat.name}</span>
+						<span class="opacity-70 ml-1 text-[11px]">({cat.count})</span>
+					</a>
+				))
 			}
-		</main>
-</Layout>
+		</nav>
+
+		<!-- GRID DE ARTÍCULOS EN GLASSMORPHISM -->
+		{
+			posts.length > 0 ? (
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+					{
+						posts.map((post) => (
+							<a
+								href={`/blog/${(post as any).slug || post.id}/`}
+								class="group bg-white/[0.03] hover:bg-white/[0.06] backdrop-blur-md rounded-3xl overflow-hidden border border-white/10 hover:border-teal-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.6)] flex flex-col"
+							>
+								<div class="relative overflow-hidden h-52 bg-black/40">
+									{post.data.heroImage && (
+										<img
+											src={post.data.heroImage}
+											alt={post.data.title}
+											class="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
+											loading="lazy"
+										/>
+									)}
+									<div class="absolute top-3 left-3 bg-gray-950/80 backdrop-blur-md px-3.5 py-1 rounded-full border border-white/15 text-xs font-bold text-teal-400 uppercase tracking-wide">
+										{categoryName}
+									</div>
+									<div class="absolute inset-0 bg-gradient-to-t from-gray-950/60 via-transparent to-transparent"></div>
+								</div>
+								
+								<div class="p-6 sm:p-7 flex-1 flex flex-col">
+									<div class="flex items-center gap-1.5 text-amber-400 text-xs mb-2.5">
+										<span>★★★★★</span>
+										<span class="text-gray-400 font-medium ml-1">(Guía Verificada)</span>
+									</div>
+
+									<h2 class="text-lg sm:text-xl font-bold text-white mb-2.5 leading-snug group-hover:text-teal-300 transition-colors line-clamp-2">
+										{post.data.title}
+									</h2>
+
+									<p class="text-gray-400 text-sm mb-6 flex-1 line-clamp-3 leading-relaxed">
+										{post.data.description}
+									</p>
+
+									<div class="mt-auto w-full bg-gradient-to-r from-orange-500 to-amber-500 group-hover:from-orange-400 group-hover:to-amber-400 text-white text-center font-bold py-3 px-4 rounded-xl shadow-md shadow-orange-500/20 transition-all duration-300 flex items-center justify-center gap-2 text-sm">
+										<span>Ver Análisis y Precio</span>
+										<svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+										</svg>
+									</div>
+								</div>
+							</a>
+						))
+					}
+				</div>
+			) : (
+				<div class="text-center py-16 px-6 bg-white/[0.03] backdrop-blur-md rounded-3xl border border-white/10 max-w-xl mx-auto my-12 shadow-xl">
+					<span class="inline-block p-4 rounded-full bg-white/5 border border-white/10 text-4xl mb-4">✍️</span>
+					<h2 class="text-2xl font-bold text-white mb-3">Próximamente nuevos análisis</h2>
+					<p class="text-gray-400 text-sm sm:text-base leading-relaxed mb-6">
+						El autopiloto está redactando las mejores comparativas y análisis de compra para la categoría {categoryName}.
+					</p>
+					<a href="/" class="inline-flex items-center gap-2 px-7 py-3 rounded-full bg-teal-400 text-gray-950 font-extrabold text-sm hover:bg-teal-300 transition-all no-underline shadow-lg shadow-teal-500/20">
+						← Explorar todas las categorías
+					</a>
+				</div>
+			)
+		}
+	</main>
+</BaseLayout>
