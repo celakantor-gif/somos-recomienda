@@ -15,7 +15,9 @@ categorias = [
     "bricolaje-y-herramientas",
     "informatica",
     "productos-para-mascotas",
-    "hogar-y-cocina"
+    "hogar-y-cocina",
+    "deportes-y-aire-libre",
+    "cuidado-personal"
 ]
 
 categoria_elegida = random.choice(categorias)

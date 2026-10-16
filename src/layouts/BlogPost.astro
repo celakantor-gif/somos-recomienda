@@ -1,5 +1,5 @@
 ---
-import type { CollectionEntry } from 'astro:content';
+import { type CollectionEntry, getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import AmazonCTA from '../components/AmazonCTA.astro';
@@ -123,6 +123,39 @@ const newsArticleSchema = {
 		},
 	},
 };
+
+function slugify(text: string): string {
+	return (text || '')
+		.toLowerCase()
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-+|-+$/g, '');
+}
+
+const currentCatSlug = slugify(category || '');
+
+// Consultar artículos para el módulo "Te puede interesar..."
+const allPosts = await getCollection('blog');
+const otherPosts = allPosts.filter((p) => {
+	const pid = (p as any).slug || p.id.replace(/^\/+|\/+$/g, '');
+	const cur = currentSlug.replace(/^\/+|\/+$/g, '');
+	return pid !== cur;
+});
+
+const sameCategoryPosts = otherPosts.filter(
+	(p) => slugify(p.data.category || '') === currentCatSlug
+);
+sameCategoryPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+let relatedPosts = sameCategoryPosts.slice(0, 3);
+if (relatedPosts.length < 3) {
+	const existingIds = new Set(relatedPosts.map((p) => p.id));
+	const fallbackPosts = otherPosts
+		.filter((p) => !existingIds.has(p.id))
+		.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+	relatedPosts.push(...fallbackPosts.slice(0, 3 - relatedPosts.length));
+}
 ---
 
 <BaseLayout title={title} description={description}>
@@ -235,11 +268,6 @@ const newsArticleSchema = {
 						<AuthorBox />
 					</div>
 				)}
-				{isBlogPost && (
-					<div class="article-related-block my-10">
-						<ArticulosRelacionados categoria={category} currentSlug={currentSlug} />
-					</div>
-				)}
 				<div class="article-adsense-bottom-block my-8">
 					<AdSenseRotator position="bottom" id="ad-rotator-bottom" />
 				</div>
@@ -252,6 +280,68 @@ const newsArticleSchema = {
 			</div>
 		</article>
 	</main>
+
+	{/* SECCIÓN "TE PUEDE INTERESAR..." (GRID DE 3 COLUMNAS EN GLASSMORPHISM) */}
+	{relatedPosts.length > 0 && (
+		<section class="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-t border-white/10">
+			<div class="flex items-center justify-between mb-8 px-1">
+				<div>
+					<span class="text-xs font-bold text-teal-400 uppercase tracking-widest block mb-1">Recomendaciones para ti</span>
+					<h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Te puede interesar...</h2>
+				</div>
+				{category && (
+					<a href={`/categoria/${currentCatSlug}`} class="text-xs sm:text-sm font-semibold text-teal-400 hover:text-teal-300 transition-colors flex items-center gap-1">
+						<span>Ver más en {category}</span>
+						<span>→</span>
+					</a>
+				)}
+			</div>
+
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+				{relatedPosts.map((post) => (
+					<a
+						href={`/blog/${(post as any).slug || post.id}/`}
+						class="group bg-white/[0.03] hover:bg-white/[0.06] backdrop-blur-md rounded-3xl overflow-hidden border border-white/10 hover:border-teal-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.6)] flex flex-col"
+					>
+						<div class="relative overflow-hidden h-48 bg-black/40">
+							<img
+								src={post.data.heroImage || '/favicon.svg'}
+								alt={post.data.title}
+								class="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
+								loading="lazy"
+							/>
+							<div class="absolute top-3 left-3 bg-gray-950/80 backdrop-blur-md px-3.5 py-1 rounded-full border border-white/15 text-xs font-bold text-teal-400 uppercase tracking-wide">
+								{post.data.category || category}
+							</div>
+							<div class="absolute inset-0 bg-gradient-to-t from-gray-950/60 via-transparent to-transparent"></div>
+						</div>
+
+						<div class="p-6 flex-1 flex flex-col">
+							<div class="flex items-center gap-1.5 text-amber-400 text-xs mb-2.5">
+								<span>★★★★★</span>
+								<span class="text-gray-400 font-medium ml-1">(4.8/5 • Guía Verificada)</span>
+							</div>
+
+							<h3 class="text-base sm:text-lg font-bold text-white mb-2 leading-snug group-hover:text-teal-300 transition-colors line-clamp-2">
+								{post.data.title}
+							</h3>
+
+							<p class="text-gray-400 text-xs sm:text-sm mb-5 flex-1 line-clamp-2 leading-relaxed">
+								{post.data.description}
+							</p>
+
+							<div class="mt-auto w-full bg-gradient-to-r from-orange-500 to-amber-500 group-hover:from-orange-400 group-hover:to-amber-400 text-white text-center font-bold py-2.5 px-4 rounded-xl shadow-md shadow-orange-500/20 transition-all duration-300 flex items-center justify-center gap-2 text-sm">
+								<span>Leer Análisis</span>
+								<svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+								</svg>
+							</div>
+						</div>
+					</a>
+				))}
+			</div>
+		</section>
+	)}
 
 	<style>
 		.article-hero {
