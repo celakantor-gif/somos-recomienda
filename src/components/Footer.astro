@@ -1,0 +1,73 @@
+---
+import { SITE_TITLE } from '../consts';
+const today = new Date();
+---
+
+<footer>
+	<div class="footer-inner">
+		<div class="footer-brand">
+			<span class="brand-name">{SITE_TITLE}</span>
+			<p class="tagline">Respuestas directas, soluciones reales. Sin rodeos.</p>
+		</div>
+		<div class="footer-links flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-gray-400 mb-3">
+			<a href="/aviso-legal" class="hover:text-white transition-colors">Aviso Legal</a>
+			<span class="text-gray-700 hidden sm:inline">•</span>
+			<a href="/privacidad" class="hover:text-white transition-colors">Política de Privacidad</a>
+			<span class="text-gray-700 hidden sm:inline">•</span>
+			<a href="/cookies" class="hover:text-white transition-colors">Política de Cookies</a>
+		</div>
+		<div class="footer-bottom flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs sm:text-sm text-gray-500">
+			<p>&copy; {today.getFullYear()} {SITE_TITLE}. Todos los derechos reservados.</p>
+		</div>
+	</div>
+</footer>
+
+<style>
+	footer {
+		padding: 3.5rem 1.5rem 2.5rem;
+		background: rgba(10, 10, 10, 0.95);
+		border-top: 1px solid rgba(255, 255, 255, 0.08);
+		color: #9ca3af;
+		margin-top: 4rem;
+	}
+	.footer-inner {
+		max-width: 1100px;
+		margin: 0 auto;
+		text-align: center;
+	}
+	.brand-name {
+		font-size: 1.3rem;
+		font-weight: 800;
+		color: #ffffff;
+		letter-spacing: -0.02em;
+	}
+	.tagline {
+		margin: 0.4rem 0 1.5rem;
+		font-size: 0.95rem;
+		color: #9ca3af;
+	}
+	.footer-links a {
+		text-decoration: none;
+	}
+	.footer-links a:hover {
+		text-decoration: underline;
+	}
+	.footer-bottom {
+		padding-top: 1.5rem;
+		border-top: 1px solid rgba(255, 255, 255, 0.06);
+		font-size: 0.85rem;
+		color: #6b7280;
+	}
+	.footer-bottom p {
+		margin: 0;
+	}
+	.footer-bottom a {
+		color: #9ca3af;
+		text-decoration: none;
+		transition: color 0.2s ease;
+	}
+	.footer-bottom a:hover {
+		color: #ffffff;
+		text-decoration: underline;
+	}
+</style>

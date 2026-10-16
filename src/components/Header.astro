@@ -1,0 +1,134 @@
+---
+import { SITE_TITLE } from '../consts';
+
+const pathname = Astro.url.pathname.replace(/\/$/, '');
+---
+
+<header class="sticky top-0 z-50 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/10">
+	<nav class="max-w-7xl mx-auto px-4 sm:px-6 h-[72px] flex items-center justify-between">
+		<!-- Brand / Logo a la izquierda -->
+		<div class="brand flex items-center shrink-0">
+			<a href="/" class="brand-link flex items-center no-underline group">
+				<img src="/logo.jfif" alt="Logo Recomendación" class="h-14 w-auto object-contain drop-shadow-[0_0_15px_rgba(20,184,166,0.3)] hover:scale-105 transition-transform duration-300" />
+			</a>
+		</div>
+
+		<!-- Menú de Enlaces a la derecha -->
+		<ul class="flex gap-4">
+			<li><a href="/categoria/bricolaje-y-herramientas" class="hover:text-teal-400 transition-colors">Bricolaje</a></li>
+			<li><a href="/categoria/informatica" class="hover:text-teal-400 transition-colors">Informática</a></li>
+			<li><a href="/categoria/productos-para-mascotas" class="hover:text-teal-400 transition-colors">Mascotas</a></li>
+			<li><a href="/categoria/hogar-y-cocina" class="hover:text-teal-400 transition-colors">Hogar</a></li>
+		</ul>
+	</nav>
+</header>
+
+<style>
+	header {
+		margin: 0;
+		padding: 0;
+		background: rgba(10, 10, 10, 0.9);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		position: sticky;
+		top: 0;
+		z-index: 100;
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
+		width: 100%;
+	}
+
+	nav {
+		max-width: 1200px;
+		margin: 0 auto;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		height: 72px;
+		padding: 0 1.5rem;
+		box-sizing: border-box;
+	}
+
+	.brand {
+		display: flex;
+		align-items: center;
+		flex-shrink: 0;
+	}
+
+	.brand-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		text-decoration: none;
+		color: #ffffff;
+	}
+
+	.brand-name {
+		font-size: 1.65rem;
+		font-weight: 900;
+		letter-spacing: -0.03em;
+		color: #ffffff;
+	}
+
+	.brand-dot {
+		width: 8px;
+		height: 8px;
+		background: var(--accent, #00C988);
+		border-radius: 50%;
+		display: inline-block;
+		box-shadow: 0 0 10px rgba(0, 201, 136, 0.8);
+	}
+
+	/* Menú de Categorías Ganadoras */
+	ul.flex {
+		display: flex;
+		align-items: center;
+		gap: 1.5rem;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	ul.flex li {
+		display: inline-flex;
+		align-items: center;
+	}
+
+	ul.flex a {
+		font-size: 1rem;
+		font-weight: 600;
+		color: #d1d5db;
+		text-decoration: none;
+		padding: 0.4rem 0.5rem;
+		border-radius: 8px;
+		transition: color 0.2s ease, background-color 0.2s ease;
+	}
+
+	ul.flex a:hover,
+	.hover\:text-teal-400:hover {
+		color: #2dd4bf !important;
+	}
+
+	.transition-colors {
+		transition: color 0.2s ease;
+	}
+
+	@media (max-width: 640px) {
+		nav {
+			padding: 0 1rem;
+			height: 64px;
+		}
+
+		.brand-name {
+			font-size: 1.35rem;
+		}
+
+		ul.flex {
+			gap: 0.75rem;
+		}
+
+		ul.flex a {
+			font-size: 0.85rem;
+			padding: 0.2rem 0.3rem;
+		}
+	}
+</style>

@@ -1,0 +1,95 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+// Obtenemos los artículos generados por Python
+const posts = (await getCollection('blog')).sort(
+	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+---
+
+<BaseLayout title="Recomendación - Las mejores guías de compra" description="Analizamos y comparamos los mejores productos del mercado para ti.">
+	
+	<!-- CABECERA HERO -->
+	<section class="text-center py-20 md:py-32 max-w-5xl mx-auto px-4">
+		<h1 class="text-5xl md:text-7xl font-extrabold text-white mb-8 tracking-tight leading-tight">
+			Las mejores <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-500">Recomendaciones</span> <br/> para tu día a día
+		</h1>
+		<p class="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
+			Analizamos, comparamos y seleccionamos los mejores productos del mercado. Desde herramientas de bricolaje hasta tecnología y cuidado de mascotas. Compra con seguridad, sin perder tiempo.
+		</p>
+	</section>
+
+	<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
+		
+		<!-- BENTO GRID (Efecto Falso 3D) -->
+		<section class="mb-32">
+			<h2 class="text-sm font-bold text-teal-500 uppercase tracking-widest mb-8 ml-2">Explora nuestras categorías</h2>
+			
+			<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+				<!-- Tarjeta Grande (Destacada) -->
+				<a href="/categoria/bricolaje-y-herramientas" class="md:col-span-2 md:row-span-2 relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50 p-10 group transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(20,184,166,0.3)] hover:border-teal-500/50 flex flex-col justify-end min-h-[300px]">
+					<div class="absolute inset-0 bg-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+					<h3 class="text-4xl font-bold text-white mb-3 relative z-10 transform transition-transform duration-500 group-hover:scale-105 origin-left">🛠️ Bricolaje y Herramientas</h3>
+					<p class="text-gray-400 relative z-10 text-lg max-w-sm">Taladros, lijadoras y equipamiento profesional al mejor precio.</p>
+				</a>
+
+				<!-- Tarjeta Pequeña 1 -->
+				<a href="/categoria/informatica" class="md:col-span-2 relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50 p-8 group transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(56,189,248,0.3)] hover:border-sky-500/50">
+					<h3 class="text-2xl font-bold text-white mb-2 relative z-10 transform transition-transform duration-500 group-hover:scale-105 origin-left">💻 Informática</h3>
+					<p class="text-gray-400 relative z-10">Portátiles, teclados y setup gaming.</p>
+				</a>
+
+				<!-- Tarjeta Pequeña 2 -->
+				<a href="/categoria/productos-para-mascotas" class="md:col-span-1 relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50 p-8 group transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(250,204,21,0.3)] hover:border-yellow-500/50">
+					<h3 class="text-xl font-bold text-white mb-2 relative z-10 transform transition-transform duration-500 group-hover:scale-105 origin-left">🐕 Mascotas</h3>
+					<p class="text-gray-400 relative z-10 text-sm">Piensos premium y camas ortopédicas.</p>
+				</a>
+
+				<!-- Tarjeta Pequeña 3 -->
+				<a href="/categoria/hogar-y-cocina" class="md:col-span-1 relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50 p-8 group transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(249,115,22,0.3)] hover:border-orange-500/50">
+					<h3 class="text-xl font-bold text-white mb-2 relative z-10 transform transition-transform duration-500 group-hover:scale-105 origin-left">🍳 Hogar</h3>
+					<p class="text-gray-400 relative z-10 text-sm">Robots y electrodomésticos.</p>
+				</a>
+			</div>
+		</section>
+
+		<!-- SECCIÓN TRANSACCIONAL (Tarjetas de Producto) -->
+		<section>
+			<h2 class="text-3xl font-bold text-white mb-8 border-b border-gray-800 pb-4">Mejores Análisis y Comparativas de Productos</h2>
+			
+			<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+				{
+					posts.map((post) => (
+						<a href={`/blog/${(post as any).slug || post.id}/`} class="group bg-gray-800/80 backdrop-blur-sm rounded-2xl overflow-hidden border border-gray-700 transition-all duration-300 hover:border-teal-500 hover:shadow-2xl hover:shadow-teal-500/10 flex flex-col">
+							<div class="relative overflow-hidden h-52">
+								<img src={post.data.heroImage} alt={post.data.title} class="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110" />
+								<div class="absolute top-3 left-3 bg-gray-900/80 backdrop-blur-md px-3 py-1 rounded-full border border-gray-600 text-xs font-bold text-teal-400 uppercase tracking-wide">
+									{post.data.category}
+								</div>
+							</div>
+							
+							<div class="p-6 flex-1 flex flex-col">
+								<div class="flex items-center gap-1 text-yellow-400 text-sm mb-3">
+									⭐⭐⭐⭐⭐ <span class="text-gray-400 text-xs ml-1 font-medium">(Análisis Experto)</span>
+								</div>
+								
+								<h3 class="text-xl font-bold text-white mb-3 leading-tight group-hover:text-teal-400 transition-colors line-clamp-2">
+									{post.data.title}
+								</h3>
+								
+								<p class="text-gray-400 text-sm mb-6 flex-1 line-clamp-3">
+									{post.data.description}
+								</p>
+								
+								<div class="mt-auto w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white text-center font-bold py-3 px-4 rounded-lg transition-transform duration-300 group-hover:-translate-y-1 shadow-md shadow-orange-500/20">
+									Ver Análisis y Precio →
+								</div>
+							</div>
+						</a>
+					))
+				}
+			</div>
+		</section>
+	</main>
+</BaseLayout>

@@ -1,0 +1,40 @@
+---
+interface Props {
+	href: string;
+	store?: string;
+	slug?: string;
+	position?: 'intro' | 'middle' | 'conclusion' | string;
+	text?: string;
+	id?: string;
+	class?: string;
+}
+
+const {
+	href,
+	store = 'amazon',
+	slug = '',
+	position = 'middle',
+	text = 'Ver oferta',
+	id,
+	class: className = '',
+} = Astro.props;
+---
+
+<a
+	id={id}
+	class:list={[
+		'affiliate-btn inline-flex items-center justify-center gap-2 font-extrabold no-underline transition-all',
+		className
+	]}
+	href={href}
+	target="_blank"
+	rel="sponsored nofollow noopener"
+	data-track-event="affiliate_click"
+	data-store={store}
+	data-slug={slug}
+	data-position={position}
+>
+	<slot>
+		<span>{text}</span>
+	</slot>
+</a>

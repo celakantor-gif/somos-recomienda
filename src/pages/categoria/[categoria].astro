@@ -1,0 +1,348 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import CategoryCarousel from '../../components/CategoryCarousel.astro';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
+
+export function slugifyCategory(category: string): string {
+	return category
+		.toLowerCase()
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-+|-+$/g, '');
+}
+
+export async function getStaticPaths() {
+	const posts = await getCollection('blog');
+	const categoryMap = new Map<string, { name: string; slug: string; posts: CollectionEntry<'blog'>[] }>();
+
+	const PREDEFINED = [
+		{ name: 'Noticias', slug: 'noticias' },
+		{ name: 'Economía', slug: 'economia' },
+		{ name: 'Deportes', slug: 'deportes' },
+		{ name: 'Deportes y Aire Libre', slug: 'deportes-y-aire-libre' },
+		{ name: 'Salud', slug: 'salud' },
+		{ name: 'Salud y Cuidado Personal', slug: 'salud-y-cuidado-personal' },
+		{ name: 'Consejos', slug: 'consejos' },
+		{ name: 'Informática', slug: 'informatica' },
+		{ name: 'Mascotas', slug: 'mascotas' },
+		{ name: 'Productos para Mascotas', slug: 'productos-para-mascotas' },
+		{ name: 'Bricolaje y Herramientas', slug: 'bricolaje-y-herramientas' },
+		{ name: 'Electrónica', slug: 'electronica' },
+		{ name: 'Hogar y Cocina', slug: 'hogar-y-cocina' },
+	];
+
+	for (const def of PREDEFINED) {
+		let catPosts: CollectionEntry<'blog'>[] = [];
+		if (def.slug === 'consejos') {
+			// Consejos aglutina lógicamente todas las guías de compra y contenido transaccional
+			catPosts = posts.filter((post) => {
+				const s = slugifyCategory(post.data.category || 'General');
+				return s !== 'noticias' && s !== 'economia' && s !== 'deportes' && s !== 'salud';
+			});
+		} else {
+			// Igualdad estricta (===): aislar cada categoría
+			catPosts = posts.filter((post) => slugifyCategory(post.data.category || 'General') === def.slug);
+		}
+
+		categoryMap.set(def.slug, {
+			name: def.name,
+			slug: def.slug,
+			posts: catPosts,
+		});
+	}
+
+	for (const post of posts) {
+		const rawCat = post.data.category || 'General';
+		const postSlug = slugifyCategory(rawCat);
+		if (!categoryMap.has(postSlug)) {
+			categoryMap.set(postSlug, {
+				name: rawCat,
+				slug: postSlug,
+				posts: posts.filter((p) => slugifyCategory(p.data.category || 'General') === postSlug),
+			});
+		}
+	}
+
+	const allCategories = Array.from(categoryMap.values())
+		.filter((c) => c.posts.length > 0)
+		.map((c) => ({
+			name: c.name,
+			slug: c.slug,
+			count: c.posts.length,
+		}));
+
+	return Array.from(categoryMap.values()).map(({ name, slug, posts: catPosts }) => ({
+		params: { categoria: slug },
+		props: {
+			categoryName: name,
+			categorySlug: slug,
+			posts: catPosts.sort(
+				(a, b) => new Date(b.data.pubDate).valueOf() - new Date(a.data.pubDate).valueOf(),
+			),
+			allCategories,
+		},
+	}));
+}
+
+interface Props {
+	categoryName: string;
+	categorySlug: string;
+	posts: CollectionEntry<'blog'>[];
+	allCategories: { name: string; slug: string; count: number }[];
+}
+
+const { categoryName, categorySlug, posts, allCategories } = Astro.props;
+const { categoria = categorySlug } = Astro.params;
+---
+
+<Layout
+	title={`${categoryName} | Guías y Artículos en ${SITE_TITLE}`}
+	description={`Descubre las mejores guías, análisis e investigaciones sobre ${categoryName} en Claramente. Información directa al grano.`}
+>
+	<style>
+		main {
+			width: 100%;
+			max-width: 1100px;
+			padding: 2rem 0 4rem;
+			margin: 0 auto;
+		}
+			.category-header {
+				text-align: center;
+				max-width: 800px;
+				margin: 0 auto 2.5rem;
+				padding-top: 1rem;
+			}
+			.category-badge {
+				display: inline-block;
+				padding: 0.35rem 0.9rem;
+				border-radius: 999px;
+				background: rgba(0, 201, 136, 0.12);
+				color: #00c988;
+				font-size: 0.85rem;
+				font-weight: 700;
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+				margin-bottom: 1rem;
+				border: 1px solid rgba(0, 201, 136, 0.3);
+			}
+			.category-badge.badge-noticias {
+				background: rgba(37, 99, 235, 0.2);
+				color: #93c5fd;
+				border-color: rgba(59, 130, 246, 0.4);
+			}
+			.category-header h1 {
+				font-size: 2.8rem;
+				line-height: 1.2;
+				margin: 0 0 0.75rem;
+				font-weight: 900;
+				color: #ffffff;
+				letter-spacing: -0.02em;
+			}
+			.category-header p {
+				color: #d1d5db;
+				font-size: 1.15rem;
+				margin: 0;
+			}
+			.categories-nav {
+				display: flex;
+				flex-wrap: wrap;
+				justify-content: center;
+				gap: 0.6rem;
+				margin: 0 auto 3rem;
+				padding-bottom: 1.5rem;
+				border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+			}
+			.cat-pill {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.4rem;
+				padding: 0.5rem 1rem;
+				border-radius: 999px;
+				background: rgba(255, 255, 255, 0.05);
+				border: 1px solid rgba(255, 255, 255, 0.1);
+				color: #e5e7eb;
+				text-decoration: none;
+				font-size: 0.9rem;
+				font-weight: 600;
+				transition: all 0.2s ease;
+			}
+			.cat-pill:hover {
+				background: rgba(0, 201, 136, 0.15);
+				color: #00c988;
+				border-color: rgba(0, 201, 136, 0.4);
+			}
+			.cat-pill.active {
+				background: var(--accent);
+				color: #0a0a0a;
+				border-color: var(--accent);
+				font-weight: 800;
+			}
+			.count {
+				font-size: 0.75rem;
+				opacity: 0.75;
+			}
+			.grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+				gap: 2rem;
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+			.card {
+				display: flex;
+				flex-direction: column;
+				height: 100%;
+				overflow: hidden;
+				border-radius: 1rem;
+				background: rgba(255, 255, 255, 0.05);
+				backdrop-filter: blur(16px);
+				-webkit-backdrop-filter: blur(16px);
+				border: 1px solid rgba(255, 255, 255, 0.1);
+				box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+				text-decoration: none;
+				transition:
+					transform 0.25s ease,
+					box-shadow 0.25s ease,
+					border-color 0.25s ease,
+					background 0.25s ease;
+			}
+			.card:hover {
+				transform: translateY(-6px);
+				background: rgba(255, 255, 255, 0.08);
+				border-color: rgba(0, 201, 136, 0.5);
+				box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 201, 136, 0.25);
+			}
+			.card img,
+			.card-img {
+				width: 100%;
+				height: 192px;
+				object-fit: cover;
+				display: block;
+			}
+			.card-body {
+				display: flex;
+				flex-direction: column;
+				flex: 1;
+				padding: 1.3rem 1.4rem 1.4rem;
+			}
+			.card h2 {
+				margin: 0 0 0.6rem;
+				font-size: 1.25rem;
+				line-height: 1.35;
+				color: #ffffff;
+				font-weight: 800;
+				transition: color 0.2s ease;
+			}
+			.card:hover h2 {
+				color: var(--accent);
+			}
+			.card p {
+				margin: 0 0 1.25rem;
+				color: #d1d5db;
+				font-size: 0.95rem;
+				line-height: 1.55;
+				flex: 1;
+			}
+			.meta {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				font-size: 0.85rem;
+				color: #9ca3af;
+				padding-top: 0.75rem;
+				border-top: 1px solid rgba(255, 255, 255, 0.08);
+			}
+			.more {
+				color: var(--accent);
+				font-weight: 700;
+				transition: color 0.2s ease;
+			}
+			.card:hover .more {
+				color: #34d399;
+			}
+			@media (max-width: 720px) {
+				.category-header h1 {
+					font-size: 2.1rem;
+				}
+				.grid {
+					grid-template-columns: 1fr;
+					gap: 1.5rem;
+				}
+			}
+	</style>
+	<main>
+			<section class="category-header">
+				<span class:list={['category-badge', { 'badge-noticias': categorySlug === 'noticias' }]}>
+					{categorySlug === 'noticias' ? 'Actualidad' : 'Temática'}
+				</span>
+				<h1>{categoryName}</h1>
+				<p>
+					{
+						categorySlug === 'noticias'
+							? 'Actualidad de España y el mundo: noticias objetivas, contrastadas y directas al grano.'
+							: categorySlug === 'consejos'
+							? 'Guías de compra, análisis de productos y recomendaciones prácticas para tomar las mejores decisiones.'
+							: `Todas las guías prácticas y respuestas directas sobre ${categoryName.toLowerCase()}.`
+					}
+				</p>
+			</section>
+
+			<CategoryCarousel category={categoria} />
+
+			<nav class="categories-nav" aria-label="Temáticas disponibles">
+				<a href="/" class="cat-pill">Todas</a>
+				{
+					allCategories.map((cat) => (
+						<a
+							href={`/categoria/${cat.slug}`}
+							class:list={['cat-pill', { active: cat.slug === categorySlug }]}
+						>
+							<span>{cat.name}</span>
+							<span class="count">({cat.count})</span>
+						</a>
+					))
+				}
+			</nav>
+
+			{
+				posts.length > 0 ? (
+					<ul class="grid">
+						{
+							posts.map((post) => (
+								<li>
+									<a class="card" href={`/blog/${post.id}/`}>
+										{post.data.heroImage && (
+											<img src={post.data.heroImage} alt={post.data.title} class="card-img" loading="lazy" />
+										)}
+										<div class="card-body">
+											<h2>{post.data.title}</h2>
+											<p>{post.data.description}</p>
+											<div class="meta">
+												<FormattedDate date={post.data.pubDate} />
+												<span class="more">Leer guía →</span>
+											</div>
+										</div>
+									</a>
+								</li>
+							))
+						}
+					</ul>
+				) : (
+					<div class="text-center py-16 px-6 bg-white/[0.03] rounded-2xl border border-white/10 max-w-xl mx-auto my-12 shadow-xl">
+						<span class="inline-block p-3 rounded-full bg-white/5 border border-white/10 text-3xl mb-3">✍️</span>
+						<h2 class="text-xl font-bold text-white mb-2">Próximamente nuevos artículos</h2>
+						<p class="text-gray-400 text-sm leading-relaxed mb-6">
+							Nuestro equipo editorial está redactando las mejores investigaciones y guías para {categoryName}.
+						</p>
+						<a href="/" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#00C988] text-gray-950 font-bold text-sm hover:bg-[#00b077] transition-all no-underline shadow-lg">
+							← Explorar todas las guías
+						</a>
+					</div>
+				)
+			}
+		</main>
+</Layout>

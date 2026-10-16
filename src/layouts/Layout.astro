@@ -1,0 +1,168 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import AdSkyscraper from '../components/AdSkyscraper.astro';
+import CookieBanner from '../components/CookieBanner.astro';
+import Analytics from '../components/Analytics.astro';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+
+interface Props {
+	title?: string;
+	description?: string;
+	showRails?: boolean;
+	disableDefaultOg?: boolean;
+}
+
+const {
+	title = `${SITE_TITLE} | Respuestas directas y soluciones reales`,
+	description = SITE_DESCRIPTION,
+	showRails = true,
+	disableDefaultOg = false,
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+	<head>
+		<BaseHead title={title} description={description} disableDefaultOg={disableDefaultOg} />
+		<Analytics />
+		{/* Script principal Google AdSense: Carga única y asíncrona (async) en el <head> para máxima velocidad SEO/Vercel */}
+		<script
+			is:inline
+			async
+			src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${import.meta.env.PUBLIC_ADSENSE_CLIENT_ID || 'ca-pub-0000000000000000'}`}
+			crossorigin="anonymous"
+		></script>
+		<slot name="head" />
+	</head>
+	<body>
+		<Header />
+
+		{
+			Astro.slots.has('hero-section') && (
+				<div class="hero-slot-wrapper w-full max-w-[1400px] mx-auto px-4 mb-12">
+					<slot name="hero-section" />
+				</div>
+			)
+		}
+
+		<div
+			class:list={[
+				'rail-grid-container w-full mx-auto px-4',
+				showRails
+					? 'max-w-[1600px] grid grid-cols-1 xl:grid-cols-[300px_minmax(0,1fr)_300px] gap-8 has-rails'
+					: 'max-w-5xl block no-rails'
+			]}
+		>
+			{
+				showRails && (
+					<aside
+						class="rail-column rail-left hidden xl:block"
+						aria-label="Espacio publicitario lateral izquierdo"
+					>
+						<div class="rail-sticky sticky top-24">
+							<AdSkyscraper />
+						</div>
+					</aside>
+				)
+			}
+
+			<div class="rail-center-content min-w-0 w-full">
+				<slot />
+			</div>
+
+			{
+				showRails && (
+					<aside
+						class="rail-column rail-right hidden xl:block"
+						aria-label="Espacio publicitario lateral derecho"
+					>
+						<div class="rail-sticky sticky top-24">
+							<AdSkyscraper />
+						</div>
+					</aside>
+				)
+			}
+		</div>
+
+		<Footer />
+		<CookieBanner />
+	</body>
+</html>
+
+<style>
+	.hero-slot-wrapper {
+		width: 100%;
+		max-width: 1400px;
+		margin-left: auto;
+		margin-right: auto;
+		padding-left: 1rem;
+		padding-right: 1rem;
+		margin-bottom: 3rem; /* mb-12 */
+		box-sizing: border-box;
+		position: relative;
+		z-index: 1;
+	}
+
+	.rail-grid-container.has-rails {
+		width: 100%;
+		max-width: 1600px;
+		margin-left: auto;
+		margin-right: auto;
+		padding-left: 1rem;
+		padding-right: 1rem;
+		box-sizing: border-box;
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 2rem;
+		align-items: start;
+		position: relative;
+		z-index: 1;
+	}
+
+	.rail-grid-container.no-rails {
+		width: 100%;
+		max-width: 64rem;
+		margin-left: auto;
+		margin-right: auto;
+		padding-left: 1rem;
+		padding-right: 1rem;
+		box-sizing: border-box;
+		display: block;
+		position: relative;
+		z-index: 1;
+	}
+
+	.rail-column {
+		display: none;
+		width: 300px;
+		box-sizing: border-box;
+	}
+
+	.rail-sticky {
+		position: sticky;
+		top: 6rem; /* top-24 */
+		z-index: 20;
+	}
+
+	.rail-center-content {
+		min-width: 0;
+		width: 100%;
+	}
+
+	@media (min-width: 1280px) {
+		.rail-grid-container.has-rails {
+			grid-template-columns: 300px minmax(0, 1fr) 300px;
+			gap: 2rem;
+		}
+
+		.rail-grid-container.no-rails {
+			display: block;
+		}
+
+		.rail-column {
+			display: block;
+		}
+	}
+</style>

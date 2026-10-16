@@ -1,0 +1,193 @@
+---
+/**
+ * Componente: Breadcrumbs.astro
+ * Migas de pan semánticas con marcado estructurado Schema.org (BreadcrumbList)
+ * para optimización de arquitectura de información y resultados enriquecidos en Google.
+ */
+
+interface Props {
+	categoria?: string;
+	titulo: string;
+	className?: string;
+}
+
+const { categoria = 'General', titulo, className = '' } = Astro.props;
+
+// Función para normalizar y crear el slug de categoría
+function slugifyCategory(cat: string): string {
+	return cat
+		.toLowerCase()
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-+|-+$/g, '');
+}
+
+const catSlug = slugifyCategory(categoria);
+const catUrl = `/categoria/${catSlug}`;
+
+// Truncar el título a ~40 caracteres con puntos suspensivos
+const MAX_TITLE_LENGTH = 40;
+const tituloTruncado =
+	titulo.length > MAX_TITLE_LENGTH
+		? `${titulo.slice(0, MAX_TITLE_LENGTH).trim()}...`
+		: titulo;
+
+// Construir URLs absolutas para Schema.org JSON-LD
+const siteUrl = Astro.site ? Astro.site.toString().replace(/\/$/, '') : 'https://somos-claramente.vercel.app';
+const homeAbsoluteUrl = `${siteUrl}/`;
+const catAbsoluteUrl = `${siteUrl}${catUrl}`;
+const currentAbsoluteUrl = `${siteUrl}${Astro.url.pathname}`;
+
+const schemaBreadcrumbs = {
+	'@context': 'https://schema.org',
+	'@type': 'BreadcrumbList',
+	itemListElement: [
+		{
+			'@type': 'ListItem',
+			position: 1,
+			name: 'Inicio',
+			item: homeAbsoluteUrl,
+		},
+		{
+			'@type': 'ListItem',
+			position: 2,
+			name: categoria,
+			item: catAbsoluteUrl,
+		},
+		{
+			'@type': 'ListItem',
+			position: 3,
+			name: titulo,
+			item: currentAbsoluteUrl,
+		},
+	],
+};
+---
+
+<nav aria-label="Migas de pan" class={`breadcrumbs-nav ${className}`}>
+	<ol class="breadcrumbs-list">
+		<li class="breadcrumbs-item">
+			<a href="/" class="breadcrumbs-link">
+				<svg class="breadcrumbs-icon" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+					<path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+				</svg>
+				<span>Inicio</span>
+			</a>
+		</li>
+
+		<li class="breadcrumbs-separator" aria-hidden="true">
+			<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+			</svg>
+		</li>
+
+		<li class="breadcrumbs-item">
+			<a href={catUrl} class="breadcrumbs-link breadcrumbs-category">
+				{categoria}
+			</a>
+		</li>
+
+		<li class="breadcrumbs-separator" aria-hidden="true">
+			<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+			</svg>
+		</li>
+
+		<li class="breadcrumbs-item breadcrumbs-current" aria-current="page" title={titulo}>
+			{tituloTruncado}
+		</li>
+	</ol>
+
+	<!-- Marcado Estructurado JSON-LD Schema.org BreadcrumbList -->
+	<script is:inline type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumbs)} />
+</nav>
+
+<style>
+	.breadcrumbs-nav {
+		width: 100%;
+		max-width: 56rem; /* 896px = max-w-4xl */
+		margin: 0 auto 1.5rem auto;
+		text-align: left;
+		display: block;
+	}
+
+	.breadcrumbs-list {
+		list-style: none !important;
+		padding: 0 !important;
+		margin: 0 !important;
+		display: flex !important;
+		flex-wrap: wrap !important;
+		align-items: center !important;
+		gap: 0.5rem !important;
+		font-size: 0.875rem;
+		line-height: 1.4;
+	}
+
+	.breadcrumbs-item {
+		list-style: none !important;
+		margin: 0 !important;
+		padding: 0 !important;
+		display: inline-flex !important;
+		align-items: center !important;
+		gap: 0.35rem !important;
+		color: #9ca3af;
+	}
+
+	.breadcrumbs-separator {
+		list-style: none !important;
+		margin: 0 !important;
+		padding: 0 !important;
+		display: inline-flex !important;
+		align-items: center !important;
+		color: #4b5563;
+		user-select: none;
+	}
+
+	.breadcrumbs-link {
+		color: #9ca3af;
+		text-decoration: none;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		transition: color 0.15s ease;
+	}
+
+	.breadcrumbs-link:hover {
+		color: var(--accent, #00C988);
+	}
+
+	.breadcrumbs-category {
+		text-transform: capitalize;
+	}
+
+	.breadcrumbs-current {
+		color: #e5e7eb;
+		font-weight: 600;
+		max-width: 280px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	@media (min-width: 640px) {
+		.breadcrumbs-current {
+			max-width: 420px;
+		}
+	}
+
+	/* Restricción estricta del tamaño de todos los iconos SVG dentro de las migas */
+	.breadcrumbs-nav svg,
+	.breadcrumbs-list svg,
+	.breadcrumbs-icon {
+		width: 16px !important;
+		height: 16px !important;
+		max-width: 16px !important;
+		max-height: 16px !important;
+		min-width: 16px !important;
+		min-height: 16px !important;
+		flex-shrink: 0 !important;
+		display: inline-block !important;
+		vertical-align: middle !important;
+	}
+</style>

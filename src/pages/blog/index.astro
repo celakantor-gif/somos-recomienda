@@ -1,0 +1,134 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+
+const posts = (await getCollection('blog')).sort(
+	(a, b) => new Date(b.data.pubDate).valueOf() - new Date(a.data.pubDate).valueOf(),
+);
+---
+
+<Layout title={`Archivo de Guías | ${SITE_TITLE}`} description={SITE_DESCRIPTION}>
+	<style>
+		main {
+			width: 100%;
+			max-width: 1000px;
+			padding: 2.5rem 0 4rem;
+			margin: 0 auto;
+		}
+			.archive-header {
+				margin-bottom: 2.5rem;
+				padding-bottom: 1.5rem;
+				border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+			}
+			.archive-header h1 {
+				font-size: 2.4rem;
+				margin: 0 0 0.5rem;
+				font-weight: 900;
+				color: #ffffff;
+			}
+			.archive-header p {
+				color: #d1d5db;
+				margin: 0;
+				font-size: 1.1rem;
+			}
+			ul {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+				gap: 2rem;
+				list-style-type: none;
+				margin: 0;
+				padding: 0;
+			}
+			ul li {
+				margin: 0;
+			}
+			.blog-card {
+				display: flex;
+				flex-direction: column;
+				height: 100%;
+				border-radius: 1rem;
+				overflow: hidden;
+				background: rgba(255, 255, 255, 0.05);
+				backdrop-filter: blur(16px);
+				-webkit-backdrop-filter: blur(16px);
+				border: 1px solid rgba(255, 255, 255, 0.1);
+				box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+				text-decoration: none;
+				transition:
+					transform 0.25s ease,
+					box-shadow 0.25s ease,
+					border-color 0.25s ease,
+					background 0.25s ease;
+			}
+			.blog-card:hover {
+				transform: translateY(-6px);
+				background: rgba(255, 255, 255, 0.08);
+				border-color: rgba(0, 201, 136, 0.5);
+				box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 201, 136, 0.25);
+			}
+			.blog-card img,
+			.card-img {
+				width: 100%;
+				height: 192px;
+				object-fit: cover;
+				display: block;
+			}
+			.card-content {
+				padding: 1.25rem;
+				display: flex;
+				flex-direction: column;
+				flex: 1;
+			}
+			.title {
+				margin: 0 0 0.5rem;
+				font-size: 1.2rem;
+				line-height: 1.35;
+				color: #ffffff;
+				font-weight: 800;
+				transition: color 0.2s ease;
+			}
+			.blog-card:hover .title {
+				color: var(--accent);
+			}
+			.date {
+				margin-top: auto;
+				padding-top: 0.75rem;
+				font-size: 0.85rem;
+				color: #9ca3af;
+				border-top: 1px solid rgba(255, 255, 255, 0.08);
+			}
+			@media (max-width: 720px) {
+				ul {
+					grid-template-columns: 1fr;
+					gap: 1.5rem;
+				}
+			}
+	</style>
+	<main>
+			<section class="archive-header">
+				<h1>Todas Nuestras Guías</h1>
+				<p>Investigación rigurosa y explicaciones paso a paso sobre hogar, tecnología y vida práctica.</p>
+			</section>
+			<section>
+				<ul>
+					{posts.map((post) => (
+						<li>
+							<a class="blog-card" href={`/blog/${post.id}/`}>
+								{post.data.heroImage && (
+									<img src={post.data.heroImage} alt={post.data.title} class="card-img" loading="lazy" />
+								)}
+								<div class="card-content">
+									<h2 class="title">{post.data.title}</h2>
+									<p class="date">
+										<FormattedDate date={post.data.pubDate} />
+									</p>
+								</div>
+							</a>
+						</li>
+					))}
+				</ul>
+			</section>
+		</main>
+</Layout>

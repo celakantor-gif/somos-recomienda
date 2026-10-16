@@ -1,0 +1,91 @@
+---
+interface Props {
+	href: string;
+	producto: string;
+	id: string;
+	texto?: string;
+	store?: string;
+	slug?: string;
+	position?: 'intro' | 'middle' | 'conclusion' | string;
+}
+const {
+	href,
+	producto,
+	id,
+	texto,
+	store = 'amazon',
+	slug = '',
+	position = 'middle',
+} = Astro.props;
+
+const botonTexto = texto || `Ver las mejores ofertas de ${producto} en Amazon`;
+---
+
+<aside class="cta-wrap" id={id}>
+	<a
+		class="cta-btn text-gray-900 hover:text-black font-extrabold no-underline shadow-lg"
+		href={href}
+		target="_blank"
+		rel="sponsored nofollow noopener"
+		data-track-event="affiliate_click"
+		data-store={store}
+		data-slug={slug}
+		data-position={position}
+	>
+		<svg class="text-gray-900 hover:text-black fill-current w-7 h-7 shrink-0" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+			<path
+				d="M7 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm10 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM1 2v2h2l3.6 7.6-1.35 2.45A2 2 0 0 0 7 17h12v-2H7.42a.25.25 0 0 1-.22-.37L8.1 13h7.45a2 2 0 0 0 1.75-1.03L21 5H5.21l-.94-2H1Z"
+			></path>
+		</svg>
+		<span class="text-gray-900 hover:text-black font-extrabold">{botonTexto}</span>
+	</a>
+	<small>Enlace de afiliado: como afiliados de Amazon obtenemos ingresos por compras adscritas.</small>
+</aside>
+
+<style>
+	.cta-wrap {
+		margin: 2.5rem 0;
+		text-align: center;
+	}
+	.cta-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.75rem;
+		max-width: 100%;
+		padding: 1.1rem 2rem;
+		border-radius: 12px;
+		background: linear-gradient(180deg, #ffb340 0%, #ff9900 100%);
+		color: #111827 !important; /* text-gray-900 */
+		font-size: 1.25rem;
+		font-weight: 800;
+		line-height: 1.25;
+		text-decoration: none !important;
+		box-shadow: 0 6px 16px rgba(255, 153, 0, 0.45);
+		transition:
+			transform 0.2s ease,
+			box-shadow 0.2s ease,
+			color 0.2s ease;
+	}
+	.cta-btn svg,
+	.cta-btn span {
+		color: #111827 !important; /* text-gray-900 */
+		fill: currentColor !important;
+	}
+	.cta-btn:hover {
+		transform: translateY(-3px) scale(1.02);
+		box-shadow: 0 10px 24px rgba(255, 153, 0, 0.6);
+		color: #000000 !important; /* text-black */
+	}
+	.cta-btn:hover svg,
+	.cta-btn:hover span {
+		color: #000000 !important;
+		fill: #000000 !important;
+	}
+	small {
+		display: block;
+		margin-top: 0.6rem;
+		font-size: 0.75rem;
+		color: rgb(var(--gray));
+	}
+</style>

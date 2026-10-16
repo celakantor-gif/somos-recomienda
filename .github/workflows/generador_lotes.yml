@@ -1,0 +1,139 @@
+name: Generador Editorial por Lotes (Batch Processing)
+
+on:
+  schedule:
+    # Horarios programados para España (referencia UTC+2 actual / verano; en invierno UTC+1):
+    # 07:00 España (UTC+2) -> 05:00 UTC : noticias
+    - cron: '0 5 * * *'
+    # 10:30 España (UTC+2) -> 08:30 UTC : economia
+    - cron: '30 8 * * *'
+    # 14:00 España (UTC+2) -> 12:00 UTC : deportes
+    - cron: '0 12 * * *'
+    # 17:30 España (UTC+2) -> 15:30 UTC : salud
+    - cron: '30 15 * * *'
+    # 21:00 España (UTC+2) -> 19:00 UTC : consejos
+    - cron: '0 19 * * *'
+
+  workflow_dispatch:
+    inputs:
+      seccion:
+        description: 'Sección editorial a procesar manualmente'
+        required: true
+        default: 'consejos'
+        type: choice
+        options:
+          - 'noticias'
+          - 'economia'
+          - 'deportes'
+          - 'salud'
+          - 'consejos'
+          - 'auto'
+      cantidad:
+        description: 'Cantidad de artículos a generar'
+        required: false
+        default: '1'
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  procesar-lote:
+    name: Procesar Lote Editorial
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: 1. Descargar repositorio (Checkout)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 2. Configurar entorno Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 3. Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 4. Determinar sección correspondiente según cron u origen
+        id: selector
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.seccion }}" != "auto" ]; then
+            SECCION="${{ github.event.inputs.seccion }}"
+            CANTIDAD="${{ github.event.inputs.cantidad || '1' }}"
+            echo "Modo manual: Sección forzada a '$SECCION' (Cantidad: $CANTIDAD)"
+          else
+            CANTIDAD="1"
+            HORA_UTC=$(date -u +%H)
+            MIN_UTC=$(date -u +%M)
+            TIEMPO_NUM=$((10#$HORA_UTC * 100 + 10#$MIN_UTC))
+            echo "Disparo automático por Cron. Hora UTC: $HORA_UTC:$MIN_UTC ($TIEMPO_NUM)"
+
+            # Mapeo por franja horaria con tolerancia de +-45 min ante retrasos de runners en GitHub:
+            # 05:00 UTC (07:00 ES) -> noticias (3)
+            if [ $TIEMPO_NUM -ge 400 ] && [ $TIEMPO_NUM -le 630 ]; then
+              SECCION="noticias"
+            # 08:30 UTC (10:30 ES) -> economia (3)
+            elif [ $TIEMPO_NUM -ge 730 ] && [ $TIEMPO_NUM -le 1000 ]; then
+              SECCION="economia"
+            # 12:00 UTC (14:00 ES) -> deportes (3)
+            elif [ $TIEMPO_NUM -ge 1100 ] && [ $TIEMPO_NUM -le 1330 ]; then
+              SECCION="deportes"
+            # 15:30 UTC (17:30 ES) -> salud (3)
+            elif [ $TIEMPO_NUM -ge 1430 ] && [ $TIEMPO_NUM -le 1700 ]; then
+              SECCION="salud"
+            # 19:00 UTC (21:00 ES) -> consejos (4)
+            elif [ $TIEMPO_NUM -ge 1800 ] && [ $TIEMPO_NUM -le 2100 ]; then
+              SECCION="consejos"
+            else
+              SECCION="consejos"
+            fi
+
+            case "$SECCION" in
+              noticias) CANTIDAD="3" ;;
+              economia) CANTIDAD="3" ;;
+              deportes) CANTIDAD="3" ;;
+              salud) CANTIDAD="3" ;;
+              consejos) CANTIDAD="4" ;;
+              *) CANTIDAD="3" ;;
+            esac
+            echo "Sección resuelta automáticamente: '$SECCION' con cuota oficial de $CANTIDAD artículos"
+          fi
+
+          echo "seccion=$SECCION" >> $GITHUB_OUTPUT
+          echo "cantidad=$CANTIDAD" >> $GITHUB_OUTPUT
+          echo "SECCION=$SECCION" >> $GITHUB_ENV
+          echo "CANTIDAD=$CANTIDAD" >> $GITHUB_ENV
+
+      - name: 5. Ejecutar generador por lotes (escritor.py)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          PUBLIC_AMAZON_AFFILIATE_TAG: ${{ secrets.PUBLIC_AMAZON_AFFILIATE_TAG }}
+          AMAZON_AFFILIATE_TAG: ${{ secrets.AMAZON_AFFILIATE_TAG }}
+        run: |
+          python escritor.py --seccion "${{ steps.selector.outputs.seccion }}" --cantidad "${{ steps.selector.outputs.cantidad }}"
+
+      - name: 6. Configurar Git y guardar cambios (Commit y Push defensivo)
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Agregamos exclusivamente los artículos markdown e imágenes generadas
+          git add src/content/blog/ public/img/
+
+          # Control de errores: verificación de cambios preparados
+          if git diff --staged --quiet; then
+            echo "AVISO: No se detectaron nuevos archivos .md ni imágenes para la sección '$SECCION'."
+            echo "Omitiendo commit para evitar commits vacíos en el historial."
+          else
+            echo "Cambios detectados. Creando commit y enviando a main..."
+            git commit -m "chore(auto): publicación por lote [sección: $SECCION] [skip ci]"
+            git push origin main
+            echo "¡Lote publicado y sincronizado exitosamente con el repositorio!"
+          fi

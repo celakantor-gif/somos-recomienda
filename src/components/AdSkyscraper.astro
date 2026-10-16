@@ -1,0 +1,28 @@
+---
+// Componente Modular Google AdSense Skyscraper (300x600)
+// Prevención estricta de saltos de layout (CLS)
+const hasEnv = Boolean(import.meta.env.PUBLIC_ADSENSE_CLIENT_ID);
+const isProd = Boolean(import.meta.env.PROD && hasEnv);
+---
+
+<div class="w-[300px] h-[600px] bg-gray-900/40 rounded-xl flex items-center justify-center overflow-hidden border border-white/5">
+	{
+		hasEnv ? (
+			<>
+				<ins
+					class="adsbygoogle"
+					style="display:inline-block;width:300px;height:600px"
+					data-ad-client={import.meta.env.PUBLIC_ADSENSE_CLIENT_ID}
+					data-ad-slot={import.meta.env.PUBLIC_ADSENSE_SLOT_ID}
+				></ins>
+				{isProd && (
+					<script is:inline>
+						(adsbygoogle = window.adsbygoogle || []).push({});
+					</script>
+				)}
+			</>
+		) : (
+			<span class="text-gray-500 text-sm">AdSense Placeholder</span>
+		)
+	}
+</div>

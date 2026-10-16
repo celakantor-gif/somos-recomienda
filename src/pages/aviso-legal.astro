@@ -1,0 +1,127 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { SITE_TITLE } from '../consts';
+---
+
+<Layout
+	title={`Aviso Legal y Condiciones de Uso | ${SITE_TITLE}`}
+	description={`Aviso legal, información corporativa y condiciones generales de uso del sitio web ${SITE_TITLE}.`}
+	showRails={false}
+>
+	<div class="max-w-4xl mx-auto px-4 py-8 sm:py-12">
+		<header class="text-center mb-10">
+			<span class="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#00C988]/15 text-[#00C988] border border-[#00C988]/30 mb-4">
+				Marco Legal & Transparencia LSSI-CE
+			</span>
+			<h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight mb-4">
+				Aviso Legal y Términos de Uso
+			</h1>
+			<p class="text-gray-400 text-base sm:text-lg max-w-2xl mx-auto">
+				Información general en cumplimiento del artículo 10 de la Ley 34/2002 de Servicios de la Sociedad de la Información y Comercio Electrónico (LSSI-CE).
+			</p>
+		</header>
+
+		<div class="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 sm:p-10 shadow-xl space-y-8 text-gray-300 text-base leading-relaxed">
+			<!-- 1. Datos Identificativos -->
+			<section class="space-y-3">
+				<h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+					<span class="text-[#00C988]">1.</span> Datos Identificativos del Responsable
+				</h2>
+				<p>
+					En cumplimiento con el deber de información recogido en el artículo 10 de la Ley 34/2002, de 11 de julio, de Servicios de la Sociedad de la Información y del Comercio Electrónico (LSSI-CE), a continuación se reflejan los datos identificativos del titular del sitio web:
+				</p>
+				<ul class="list-disc list-inside space-y-1.5 ml-2 text-gray-300">
+					<li><strong>Denominación comercial:</strong> {SITE_TITLE}</li>
+					<li><strong>Titular / Razón Social:</strong> JOSE FRANCISCO FERNANDEZ BARBERO</li>
+					<li><strong>NIF / CIF:</strong> 77143259V </li>
+					<li><strong>Domicilio Social:</strong> CALLE CARRETERA Nº3, JUVILES, GRANADA</li>
+					<li><strong>Sitio Web / Dominio:</strong> https://somos-claramente.vercel.app/</li>
+					<li><strong>Correo Electrónico de Contacto:</strong> <a href="mailto:celakantor@gmail.com" class="text-[#00C988] hover:underline">[EMAIL DE CONTACTO]</a></li>
+				</ul>
+			</section>
+
+			<!-- 2. Objeto y Ámbito -->
+			<section class="space-y-3">
+				<h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+					<span class="text-[#00C988]">2.</span> Objeto y Ámbito de Aplicación
+				</h2>
+				<p>
+					El presente Aviso Legal regula el acceso, navegación y uso del sitio web <strong>https://somos-claramente.vercel.app/</strong> (en adelante, el "Sitio Web"), así como las responsabilidades derivadas de la utilización de sus contenidos (textos, gráficos, guías de compra, comparativas, noticias y elementos multimedia).
+				</p>
+				<p>
+					El acceso y navegación por este Sitio Web atribuye la condición de Usuario, implicando la aceptación plena y sin reservas de todas las disposiciones incluidas en este Aviso Legal en la versión publicada en el momento de acceso.
+				</p>
+			</section>
+
+			<!-- 3. Cláusula de Afiliación de Amazon -->
+			<section class="space-y-3 p-5 rounded-xl bg-white/[0.03] border border-[#00C988]/20">
+				<h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+					<span class="text-[#00C988]">3.</span> Participación en el Programa de Afiliados de Amazon
+				</h2>
+				<p>
+					En cumplimiento de las directrices de la Federal Trade Commission (FTC) y las políticas operativas de Amazon Europe Core S.à r.l.:
+				</p>
+				<blockquote class="border-l-4 border-[#00C988] pl-4 py-2 italic text-gray-200 bg-black/25 rounded-r-lg">
+					"Como participante en el Programa de Afiliados de Amazon EU, JOSE FRANCISCO FERNANDEZ BARBERO obtiene ingresos por las compras adscritas que cumplen los requisitos aplicables a través de enlaces comerciales hacia Amazon.es."
+				</blockquote>
+				<p>
+					Esto implica que cuando el Usuario hace clic en un enlace de compra y formaliza una transacción, <strong>{SITE_TITLE}</strong> puede percibir una pequeña comisión porcentual sin que ello represente <strong>ningún sobrecoste ni incremento en el precio final de venta para el consumidor</strong>.
+				</p>
+				<p class="text-xs text-gray-400">
+					Amazon y el logotipo de Amazon son marcas comerciales registradas de Amazon.com, Inc. o de sus filiales.
+				</p>
+			</section>
+
+			<!-- 4. Publicidad y Google AdSense -->
+			<section class="space-y-3 p-5 rounded-xl bg-white/[0.03] border border-blue-500/20">
+				<h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+					<span class="text-blue-400">4.</span> Publicidad Display y Google AdSense
+				</h2>
+				<p>
+					Este Sitio Web exhibe espacios publicitarios gestionados a través de la red de publicidad <strong>Google AdSense</strong> (operada por Google Ireland Limited / Google LLC).
+				</p>
+				<p>
+					Google utiliza cookies y tecnologías de seguimiento para publicar anuncios personalizados o contextuales basados en visitas previas de los usuarios a este o a otros sitios de Internet. El Usuario puede gestionar y bloquear la personalización de anuncios mediante nuestro banner de consentimiento o acudiendo a la plataforma de preferencias de anuncios de Google (<a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:underline">adssettings.google.com</a>).
+				</p>
+			</section>
+
+			<!-- 5. Exención de Responsabilidad -->
+			<section class="space-y-3">
+				<h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+					<span class="text-[#00C988]">5.</span> Exención de Responsabilidad (Disclaimer de Precios y Stock)
+				</h2>
+				<p>
+					Los contenidos de este Sitio Web son de naturaleza informativa y orientativa. Aunque realizamos revisiones periódicas:
+				</p>
+				<ul class="list-disc list-inside space-y-1.5 ml-2 text-gray-300">
+					<li>Los precios, ofertas y disponibilidad de productos exhibidos corresponden al momento de la publicación y pueden variar posteriormente en las plataformas vendedoras externas (Amazon.es). El precio válido siempre será el reflejado en la tienda en el momento exacto de la compra.</li>
+					<li><strong>{SITE_TITLE}</strong> no comercializa de forma directa los productos referenciados ni actúa como distribuidor final, por lo que no asume responsabilidad sobre garantías, envíos o devoluciones, las cuales corresponden exclusivamente a los vendedores respectivos.</li>
+					<li>No nos responsabilizamos de eventuales interrupciones del servicio, caídas de servidor o errores técnicos ajenos a nuestro control.</li>
+				</ul>
+			</section>
+
+			<!-- 6. Propiedad Intelectual -->
+			<section class="space-y-3">
+				<h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+					<span class="text-[#00C988]">6.</span> Propiedad Intelectual e Industrial
+				</h2>
+				<p>
+					Todos los contenidos editoriales, estructura del código fuente, diseño, logotipos y marcas propias de este Sitio Web son titularidad de <strong>[NOMBRE DE LA EMPRESA]</strong> o de terceros licenciantes autorizados, encontrándose protegidos por el Real Decreto Legislativo 1/1996, de 12 de abril, por el que se aprueba el texto refundido de la Ley de Propiedad Intelectual.
+				</p>
+				<p>
+					Queda expresamente prohibida la reproducción, distribución o comunicación pública con fines comerciales de la totalidad o parte de los contenidos sin autorización previa por escrito.
+				</p>
+			</section>
+
+			<!-- 7. Legislación y Jurisdicción -->
+			<section class="space-y-3">
+				<h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+					<span class="text-[#00C988]">7.</span> Legislación Aplicable y Jurisdicción
+				</h2>
+				<p>
+					Para la resolución de cualquier controversia o cuestión litigiosa derivada del presente Sitio Web o de las actividades en él desarrolladas, será de aplicación la <strong>legislación española</strong>, sometiéndose expresamente las partes a los Juzgados y Tribunales competentes del domicilio del titular o, en su caso, a los que correspondan con arreglo a la normativa de protección de consumidores y usuarios.
+				</p>
+			</section>
+		</div>
+	</div>
+</Layout>

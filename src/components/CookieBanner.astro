@@ -1,0 +1,84 @@
+---
+// Componente Banner de Consentimiento de Cookies (CMP) Nativo
+// Conforme a la Guía sobre el uso de cookies de la AEPD y RGPD
+---
+
+<div
+	id="cookie-banner"
+	class="fixed bottom-0 inset-x-0 z-50 p-3 sm:p-5 transition-all duration-500 transform translate-y-full opacity-0 pointer-events-none"
+	role="dialog"
+	aria-live="polite"
+	aria-label="Consentimiento de cookies"
+>
+	<div class="max-w-4xl mx-auto bg-[#121212]/95 backdrop-blur-xl border border-white/15 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+		<div class="text-xs sm:text-sm text-gray-300 leading-relaxed flex-1 space-y-1">
+			<div class="flex items-center gap-2 mb-1">
+				<span class="inline-block w-2 h-2 rounded-full bg-[#00C988] animate-pulse"></span>
+				<strong class="text-white font-bold text-sm tracking-wide">Privacidad y Consentimiento de Cookies</strong>
+			</div>
+			<p>
+				Utilizamos cookies técnicas necesarias, analíticas y publicitarias (incluidas las de <strong>Google AdSense</strong> y <strong>Amazon Associates</strong>) para personalizar contenidos, optimizar la experiencia de navegación y financiar nuestro contenido gratuito.
+			</p>
+			<p class="text-gray-400 text-xs">
+				Puedes consultar más detalles o revocar tu consentimiento en nuestra <a href="/cookies" class="text-[#00C988] underline hover:text-white transition-colors">Política de Cookies</a> y en la <a href="/privacidad" class="text-[#00C988] underline hover:text-white transition-colors">Política de Privacidad</a>.
+			</p>
+		</div>
+
+		<div class="flex items-center gap-3 w-full md:w-auto justify-end shrink-0">
+			<button
+				id="reject-cookies-btn"
+				type="button"
+				class="px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/20 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 font-semibold text-xs sm:text-sm transition-all"
+			>
+				Rechazar
+			</button>
+			<button
+				id="accept-cookies-btn"
+				type="button"
+				class="px-6 py-2.5 rounded-xl bg-[#00C988] hover:bg-[#00b077] text-gray-950 font-bold text-xs sm:text-sm shadow-lg hover:shadow-[#00C988]/20 transition-all transform hover:-translate-y-0.5"
+			>
+				Aceptar Cookies
+			</button>
+		</div>
+	</div>
+</div>
+
+<script is:inline>
+	(function() {
+		const banner = document.getElementById('cookie-banner');
+		if (!banner) return;
+
+		const consent = localStorage.getItem('cookieConsent');
+
+		// Si no hay consentimiento previo registrado, mostramos el banner de forma fluida
+		if (!consent) {
+			requestAnimationFrame(() => {
+				banner.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+				banner.classList.add('translate-y-0', 'opacity-100');
+			});
+		}
+
+		function ocultarBanner() {
+			banner.classList.remove('translate-y-0', 'opacity-100');
+			banner.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+		}
+
+		const acceptBtn = document.getElementById('accept-cookies-btn');
+		if (acceptBtn) {
+			acceptBtn.addEventListener('click', function() {
+				localStorage.setItem('cookieConsent', 'true');
+				ocultarBanner();
+				// Despacha evento personalizado para activar servicios de terceros (Google AdSense)
+				window.dispatchEvent(new CustomEvent('acceptCookies'));
+			});
+		}
+
+		const rejectBtn = document.getElementById('reject-cookies-btn');
+		if (rejectBtn) {
+			rejectBtn.addEventListener('click', function() {
+				localStorage.setItem('cookieConsent', 'false');
+				ocultarBanner();
+			});
+		}
+	})();
+</script>

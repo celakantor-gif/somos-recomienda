@@ -1,0 +1,63 @@
+---
+// Componente de Analítica Web PostHog
+// Optimizado para rendimiento extremo (Core Web Vitals) y RGPD estricto (Cookieless por defecto)
+
+const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY || import.meta.env.PUBLIC_POSTHOG_API_KEY || '';
+const posthogHost = import.meta.env.PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com';
+---
+
+<!-- Inicialización asíncrona de PostHog y conexión con Banner de Cookies -->
+<script is:inline define:vars={{ posthogKey, posthogHost }}>
+	(function() {
+		if (!posthogKey) {
+			// Stub defensivo para desarrollo local cuando no hay clave PostHog configurada
+			window.posthog = window.posthog || {
+				__isDevStub: true,
+				capture: function(event, properties, options) {
+					if (typeof console !== 'undefined' && console.debug) {
+						console.debug('[PostHog Stub Event]:', event, properties);
+					}
+				},
+				set_config: function(cfg) {
+					if (typeof console !== 'undefined' && console.debug) {
+						console.debug('[PostHog Stub set_config]:', cfg);
+					}
+				},
+				init: function() {}
+			};
+			return;
+		}
+
+		// Snippet asíncrono no bloqueante oficial de PostHog (stub loader)
+		!function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0;var assetHost=s.api_host.indexOf(".i.posthog.com")!==-1?s.api_host.replace(".i.posthog.com","-assets.i.posthog.com"):s.api_host;p.src=assetHost+"/static/array.js";(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug getPageViewId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+
+		// Verificación de consentimiento previo en localStorage
+		var hasConsent = false;
+		try {
+			hasConsent = window.localStorage && window.localStorage.getItem('cookieConsent') === 'true';
+		} catch (e) {}
+
+		// Inicialización con persistencia en memoria por defecto (Cookieless) según RGPD
+		window.posthog.init(posthogKey, {
+			api_host: posthogHost,
+			persistence: hasConsent ? 'localStorage' : 'memory',
+			autocapture: false, // Desactivado para maximizar INP y evitar sobrecarga en el DOM
+			capture_pageview: true,
+			capture_pageleave: true,
+			disable_session_recording: true,
+			respect_dnt: true
+		});
+
+		// Actualización en caliente si el usuario acepta las cookies en el banner nativo
+		window.addEventListener('acceptCookies', function() {
+			if (window.posthog && typeof window.posthog.set_config === 'function') {
+				window.posthog.set_config({ persistence: 'localStorage' });
+			}
+		});
+	})();
+</script>
+
+<!-- Carga del Interceptor Global de Eventos de Afiliación -->
+<script>
+	import '../scripts/affiliate-tracker.js';
+</script>

@@ -1,0 +1,109 @@
+---
+/**
+ * Componente: AdSenseRotator.astro
+ * Rol: Rotación dinámica de bloques publicitarios Google AdSense para combatir
+ * la ceguera de banners (Banner Blindness) y maximizar el CTR en secciones principales.
+ */
+
+interface Props {
+	position?: 'in-article' | 'bottom' | string;
+	id?: string;
+	className?: string;
+}
+
+const {
+	position = 'in-article',
+	id = `ad-rotator-${position}`,
+	className = '',
+} = Astro.props;
+
+interface AdSlotDefinition {
+	id: string;
+	slot: string;
+	format: 'auto' | 'rectangle' | 'horizontal';
+	style: string;
+	responsive: boolean;
+	label: string;
+}
+
+// Catálogo de bloques de anuncios ficticios para rotación aleatoria
+const AD_SLOTS: AdSlotDefinition[] = [
+	{
+		id: 'slot-auto',
+		slot: '1029384756', // Ficticio: bloque adaptable
+		format: 'auto',
+		style: 'display:block;min-height:100px;',
+		responsive: true,
+		label: 'Formato Adaptable (Auto)',
+	},
+	{
+		id: 'slot-rectangle',
+		slot: '2938475610', // Ficticio: robapáginas / rectángulo mediano
+		format: 'rectangle',
+		style: 'display:inline-block;width:336px;height:280px;max-width:100%;',
+		responsive: false,
+		label: 'Formato Robapáginas (Rectangle 336x280)',
+	},
+	{
+		id: 'slot-horizontal',
+		slot: '3847561029', // Ficticio: banner horizontal / leaderboard
+		format: 'horizontal',
+		style: 'display:block;width:100%;min-height:90px;',
+		responsive: true,
+		label: 'Formato Horizontal (Banner 728x90)',
+	},
+];
+
+// Selección aleatoria en el script del componente para cada carga / renderizado
+const randomAd = AD_SLOTS[Math.floor(Math.random() * AD_SLOTS.length)];
+const clientId = import.meta.env.PUBLIC_ADSENSE_CLIENT_ID || 'ca-pub-0000000000000000';
+const hasEnv = Boolean(import.meta.env.PUBLIC_ADSENSE_CLIENT_ID);
+const isProd = Boolean(import.meta.env.PROD && hasEnv);
+---
+
+<div
+	class={`adsense-rotator-wrapper my-8 w-full flex flex-col items-center justify-center overflow-hidden ${className}`}
+	data-ad-position={position}
+	data-ad-format={randomAd.format}
+	id={id}
+>
+	<span class="text-[10px] uppercase tracking-widest text-gray-500 mb-1.5 font-bold select-none">
+		Publicidad
+	</span>
+
+	<div class="ad-slot-container w-full max-w-full flex items-center justify-center p-2 rounded-2xl bg-[#121212]/80 border border-white/10 shadow-lg min-h-[90px]">
+		<ins
+			class="adsbygoogle"
+			style={hasEnv ? randomAd.style : 'display:none;'}
+			data-ad-client={clientId}
+			data-ad-slot={randomAd.slot}
+			data-ad-format={randomAd.format}
+			data-full-width-responsive={randomAd.responsive ? 'true' : undefined}
+		></ins>
+
+		{hasEnv && isProd && (
+			<script is:inline>
+				try {
+					(adsbygoogle = window.adsbygoogle || []).push({});
+				} catch (e) {
+					console.warn('AdSense push error:', e);
+				}
+			</script>
+		)}
+
+		{!hasEnv && (
+			<div class="ad-placeholder-preview py-5 px-4 text-center w-full">
+				<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[#00C988] text-xs font-mono font-semibold mb-2">
+					<span class="w-2 h-2 rounded-full bg-[#00C988] animate-pulse"></span>
+					Google AdSense Rotator · {randomAd.label}
+				</div>
+				<div class="text-xs text-gray-400 font-mono">
+					data-ad-slot="<span class="text-gray-200 font-bold">{randomAd.slot}</span>" · data-ad-format="<span class="text-gray-200 font-bold">{randomAd.format}</span>"
+				</div>
+				<p class="text-[11px] text-gray-500 mt-1.5 max-w-md mx-auto">
+					Ubicación: <strong class="text-gray-400 font-medium capitalize">{position}</strong>. Alternancia aleatoria activa para prevenir ceguera publicitaria (Banner Blindness).
+				</p>
+			</div>
+		)}
+	</div>
+</div>

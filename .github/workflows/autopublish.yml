@@ -1,0 +1,54 @@
+name: Publicacion Diaria Automatizada (Estrategia 4+1)
+
+on:
+  schedule:
+    # Todos los días a las 06:00 UTC (08:00 hora peninsular de España en verano)
+    - cron: '0 6 * * *'
+  workflow_dispatch: # Permite lanzar la publicación manualmente con un clic en GitHub Actions
+
+permissions:
+  contents: write # Permite hacer commit y push a la rama main
+
+jobs:
+  publicar-articulos:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Descargar repositorio (Checkout)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 2. Configurar entorno Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 3. Instalar librerías requeridas
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 4. Ejecutar Orquestador Maestro (4 Guías + 1 Noticia)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          PUBLIC_AMAZON_AFFILIATE_TAG: ${{ secrets.PUBLIC_AMAZON_AFFILIATE_TAG }}
+        run: |
+          python orquestador.py
+
+      - name: 5. Configurar identidad de Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: 6. Guardar cambios y subir a GitHub (Commit y Push)
+        run: |
+          git add src/content/blog/ public/img/
+          if git diff --staged --quiet; then
+            echo "No hay nuevos artículos para publicar hoy."
+          else
+            git commit -m "chore(auto): publicación diaria de 5 artículos [4+1] "
+            git push origin main
+          fi

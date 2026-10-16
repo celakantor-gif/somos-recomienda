@@ -1,0 +1,217 @@
+:root {
+	--accent: #00C988;
+	--accent-dark: #00A870;
+	--accent-light: rgba(0, 201, 136, 0.16);
+	--bg-dark: #0a0a0a;
+	--text: #d1d5db; /* text-gray-300 */
+	--gray: 156, 163, 175;
+	--gray-light: 26, 26, 26;
+	--gray-dark: 229, 231, 235;
+	--gray-gradient: rgba(255, 255, 255, 0.05), #0a0a0a;
+	--box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+}
+
+body {
+	font-family: var(--font-atkinson), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	margin: 0;
+	padding: 0;
+	text-align: left;
+	background-color: #0a0a0a;
+	color: #d1d5db; /* text-gray-300 */
+	font-size: 20px;
+	line-height: 1.7;
+	position: relative;
+	min-height: 100vh;
+	overflow-x: hidden;
+}
+
+/* Efecto Mesh Gradient sutil en la parte superior del layout */
+body::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 100%;
+	max-width: 1400px;
+	height: 650px;
+	background:
+		radial-gradient(ellipse 70% 45% at 50% -5%, rgba(0, 201, 136, 0.18), transparent 70%),
+		radial-gradient(circle at 15% 20%, rgba(0, 201, 136, 0.12), transparent 45%),
+		radial-gradient(circle at 85% 25%, rgba(0, 201, 136, 0.08), transparent 45%);
+	pointer-events: none;
+	z-index: 0;
+}
+
+main {
+	width: 100%;
+	margin: auto;
+	position: relative;
+	z-index: 1;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	margin: 0 0 0.5rem 0;
+	color: #ffffff; /* text-white */
+	line-height: 1.25;
+	font-weight: 800;
+}
+
+h1 {
+	font-size: 2.8rem;
+	letter-spacing: -0.02em;
+}
+
+h2 {
+	font-size: 2.1rem;
+	letter-spacing: -0.015em;
+}
+
+h3 {
+	font-size: 1.6rem;
+}
+
+h4 {
+	font-size: 1.3rem;
+}
+
+h5 {
+	font-size: 1.15rem;
+}
+
+strong,
+b {
+	font-weight: 700;
+	color: #ffffff;
+}
+
+a {
+	color: var(--accent);
+	text-decoration-thickness: 1.5px;
+	transition: color 0.2s ease;
+}
+
+a:hover {
+	color: #34d399;
+}
+
+p {
+	margin-bottom: 1.2em;
+	color: #d1d5db; /* text-gray-300 */
+}
+
+.prose p {
+	margin-bottom: 1.7em;
+	color: #d1d5db; /* text-gray-300 */
+}
+
+textarea,
+input {
+	font-size: 16px;
+	font-family: inherit;
+	background: rgba(255, 255, 255, 0.05);
+	color: #ffffff;
+	border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+table {
+	width: 100%;
+}
+
+img {
+	max-width: 100%;
+	height: auto;
+	border-radius: 12px;
+}
+
+code {
+	padding: 2px 6px;
+	background-color: rgba(255, 255, 255, 0.08);
+	color: #00c988;
+	border-radius: 4px;
+	font-size: 0.9em;
+}
+
+pre {
+	padding: 1.5em;
+	border-radius: 8px;
+	background: rgba(255, 255, 255, 0.04);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+pre > code {
+	all: unset;
+}
+
+blockquote {
+	border-left: 4px solid var(--accent);
+	background: rgba(255, 255, 255, 0.03);
+	border-radius: 0 12px 12px 0;
+	padding: 0.8em 0 0.8em 1.2em;
+	margin: 1.5em 0;
+	font-size: 1.2em;
+	font-style: italic;
+	color: #e5e7eb;
+}
+
+hr {
+	border: none;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 720px) {
+	body {
+		font-size: 18px;
+	}
+	main {
+		padding: 1.5em 1em;
+	}
+}
+
+.sr-only {
+	border: 0;
+	padding: 0;
+	margin: 0;
+	position: absolute !important;
+	height: 1px;
+	width: 1px;
+	overflow: hidden;
+	clip: rect(1px 1px 1px 1px);
+	clip: rect(1px, 1px, 1px, 1px);
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+/* Botón CTA de Afiliación Amazon para Reseñas y Comparativas */
+.btn-amazon-cta {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	width: 100%;
+	max-width: 480px;
+	margin: 1.75rem auto;
+	padding: 1.1rem 1.8rem;
+	border-radius: 12px;
+	background: linear-gradient(180deg, #ffb340 0%, #ff9900 100%);
+	color: #111827 !important;
+	font-size: 1.15rem;
+	font-weight: 800;
+	line-height: 1.25;
+	text-decoration: none !important;
+	box-shadow: 0 6px 16px rgba(255, 153, 0, 0.45);
+	transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+	text-align: center;
+}
+
+.btn-amazon-cta:hover {
+	transform: translateY(-2px) scale(1.02);
+	box-shadow: 0 10px 24px rgba(255, 153, 0, 0.6);
+	color: #000000 !important;
+}
+

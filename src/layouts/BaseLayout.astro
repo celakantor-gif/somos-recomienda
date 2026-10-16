@@ -1,0 +1,51 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import CookieBanner from '../components/CookieBanner.astro';
+import Analytics from '../components/Analytics.astro';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+
+interface Props {
+	title?: string;
+	description?: string;
+}
+
+const {
+	title = `${SITE_TITLE} - Las mejores guías de compra`,
+	description = SITE_DESCRIPTION,
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+	<head>
+		<BaseHead title={title} description={description} />
+		<Analytics />
+		{/* Script Tailwind para garantizar la compilación completa de la Bento Grid y estilos de conversión */}
+		<script is:inline src="https://cdn.tailwindcss.com"></script>
+		<script
+			is:inline
+			async
+			src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${import.meta.env.PUBLIC_ADSENSE_CLIENT_ID || 'ca-pub-0000000000000000'}`}
+			crossorigin="anonymous"
+		></script>
+		<slot name="head" />
+	</head>
+	<body class="min-h-screen bg-gray-950 text-white w-full overflow-x-hidden m-0 p-0">
+		<Header />
+		<div class="w-full">
+			<slot />
+		</div>
+		<Footer />
+		<CookieBanner />
+	</body>
+</html>
+
+<style is:global>
+	/* Permitir que los contenedores <main> ocupen el ancho completo definido por sus clases max-w */
+	main {
+		width: 100% !important;
+		padding-top: 0;
+	}
+</style>
