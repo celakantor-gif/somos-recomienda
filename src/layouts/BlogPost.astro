@@ -71,7 +71,7 @@ const palabraClaveLimpia = limpiarKeywordParaAmazon(base);
 const amazonUrl = `https://www.amazon.es/s?k=${encodeURIComponent(palabraClaveLimpia)}&tag=${encodeURIComponent(AMAZON_AFFILIATE_TAG)}`;
 
 // SEO Fase 3: URLs absolutas y marcado estructurado Schema.org NewsArticle
-const siteBase = Astro.site ? Astro.site : new URL('https://somos-claramente.vercel.app');
+const siteBase = Astro.site ? Astro.site : new URL('https://somos-recomienda.vercel.app');
 
 function getAbsoluteImageUrl(img?: any): string {
 	if (!img) {
@@ -112,11 +112,11 @@ const newsArticleSchema = {
 	dateModified: dateModifiedISO,
 	author: {
 		'@type': 'Organization',
-		name: 'Redacción Claramente',
+		name: 'Redacción Recomendación',
 	},
 	publisher: {
 		'@type': 'Organization',
-		name: 'Claramente',
+		name: 'Recomendación',
 		logo: {
 			'@type': 'ImageObject',
 			url: new URL('/favicon.svg', siteBase).toString(),
@@ -186,7 +186,7 @@ const newsArticleSchema = {
 								{category}
 							</a>
 						)}
-						<span class="author">Autor: Redacción Claramente</span>
+						<span class="author">Autor: Redacción Recomendación</span>
 						{esNoticia ? (
 							<span class="badge badge-noticias">🔴 Actualidad</span>
 						) : (

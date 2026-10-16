@@ -6,7 +6,7 @@ import { defineConfig, fontProviders } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://somos-claramente.vercel.app',
+	site: 'https://somos-recomienda.vercel.app',
 	integrations: [mdx(), sitemap()],
 	fonts: [
 		{

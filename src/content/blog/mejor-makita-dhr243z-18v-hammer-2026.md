@@ -16,7 +16,7 @@ heroImage: "/img/mejor-makita-dhr243z-18v-hammer-2026.jpg"
 
 Si buscas un taladro percutor potente y versátil, el Makita DHR243Z 18V Hammer puede ser la solución perfecta. Este herramienta está diseñada para satisfacer las necesidades tanto de aficionados como de profesionales, garantizando resultados de calidad en cualquier proyecto de bricolaje o construcción.
 
-<a href="https://amazon.es/dp/B00HOD3AJY/?tag=claramente03-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
+<a href="https://amazon.es/dp/B00HOD3AJY/?tag=somosrec-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
 
 ### Potencia y Rendimiento  
 El Makita DHR243Z cuenta con un motor de 18V que ofrece una potencia de 2.0 J, ideal para perforar en hormigón, madera y metal. Su sistema de percutor permite lograr un rendimiento alto en tareas exigentes, asegurando que no te quedes atascado en trabajos difíciles.
@@ -46,5 +46,5 @@ Al elegir un taladro percutor como el Makita DHR243Z, considera la potencia y ca
 ## Veredicto Final  
 El Makita DHR243Z 18V Hammer es ideal para usuarios que buscan un taladro percutor potente y fiable para proyectos tanto domésticos como profesionales. Si valoras la calidad y la durabilidad, esta herramienta es una excelente inversión que no te decepcionará.
 
-<a href="https://amazon.es/dp/B00HOD3AJY/?tag=claramente03-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
+<a href="https://amazon.es/dp/B00HOD3AJY/?tag=somosrec-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
 

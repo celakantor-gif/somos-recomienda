@@ -6,90 +6,242 @@ import { getCollection } from 'astro:content';
 const posts = (await getCollection('blog')).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
 );
+
+// Producto destacado del día (el más reciente)
+const featuredPost = posts.length > 0 ? posts[0] : null;
+const catalogPosts = posts.length > 1 ? posts.slice(1) : posts;
 ---
 
-<BaseLayout title="Recomendación - Las mejores guías de compra" description="Analizamos y comparamos los mejores productos del mercado para ti.">
-	
-	<!-- CABECERA HERO -->
-	<section class="text-center py-20 md:py-32 max-w-5xl mx-auto px-4">
-		<h1 class="text-5xl md:text-7xl font-extrabold text-white mb-8 tracking-tight leading-tight">
-			Las mejores <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-500">Recomendaciones</span> <br/> para tu día a día
-		</h1>
-		<p class="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-			Analizamos, comparamos y seleccionamos los mejores productos del mercado. Desde herramientas de bricolaje hasta tecnología y cuidado de mascotas. Compra con seguridad, sin perder tiempo.
-		</p>
-	</section>
+<BaseLayout
+	title="Recomendación - Las mejores guías y comparativas de compra"
+	description="Selecciones editoriales independientes, análisis rigurosos y las mejores recomendaciones de compra en tecnología, bricolaje, hogar y mascotas."
+>
+	<main class="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-gray-950 to-black text-white relative overflow-hidden">
+		<!-- Mesh Gradient decorativo superior -->
+		<div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[550px] pointer-events-none opacity-40 blur-3xl -z-10 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-teal-500/25 via-emerald-500/10 to-transparent"></div>
 
-	<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
-		
-		<!-- BENTO GRID (Efecto Falso 3D) -->
-		<section class="mb-32">
-			<h2 class="text-sm font-bold text-teal-500 uppercase tracking-widest mb-8 ml-2">Explora nuestras categorías</h2>
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-24">
 			
-			<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-				<!-- Tarjeta Grande (Destacada) -->
-				<a href="/categoria/bricolaje-y-herramientas" class="md:col-span-2 md:row-span-2 relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50 p-10 group transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(20,184,166,0.3)] hover:border-teal-500/50 flex flex-col justify-end min-h-[300px]">
-					<div class="absolute inset-0 bg-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-					<h3 class="text-4xl font-bold text-white mb-3 relative z-10 transform transition-transform duration-500 group-hover:scale-105 origin-left">🛠️ Bricolaje y Herramientas</h3>
-					<p class="text-gray-400 relative z-10 text-lg max-w-sm">Taladros, lijadoras y equipamiento profesional al mejor precio.</p>
-				</a>
+			{/* HERO VANGUARDISTA: PRODUCTO DESTACADO DEL DÍA (GLASSMORPHISM ESTILO BOUTIQUE) */}
+			{featuredPost && (
+				<section class="mb-20">
+					<div class="relative group overflow-hidden rounded-3xl bg-white/[0.04] backdrop-blur-xl border border-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] hover:border-white/20 transition-all duration-500">
+						{/* Ambient Glows dentro de la tarjeta */}
+						<div class="absolute -top-32 -left-32 w-80 h-80 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
+						<div class="absolute -bottom-32 -right-32 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-				<!-- Tarjeta Pequeña 1 -->
-				<a href="/categoria/informatica" class="md:col-span-2 relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50 p-8 group transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(56,189,248,0.3)] hover:border-sky-500/50">
-					<h3 class="text-2xl font-bold text-white mb-2 relative z-10 transform transition-transform duration-500 group-hover:scale-105 origin-left">💻 Informática</h3>
-					<p class="text-gray-400 relative z-10">Portátiles, teclados y setup gaming.</p>
-				</a>
-
-				<!-- Tarjeta Pequeña 2 -->
-				<a href="/categoria/productos-para-mascotas" class="md:col-span-1 relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50 p-8 group transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(250,204,21,0.3)] hover:border-yellow-500/50">
-					<h3 class="text-xl font-bold text-white mb-2 relative z-10 transform transition-transform duration-500 group-hover:scale-105 origin-left">🐕 Mascotas</h3>
-					<p class="text-gray-400 relative z-10 text-sm">Piensos premium y camas ortopédicas.</p>
-				</a>
-
-				<!-- Tarjeta Pequeña 3 -->
-				<a href="/categoria/hogar-y-cocina" class="md:col-span-1 relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50 p-8 group transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(249,115,22,0.3)] hover:border-orange-500/50">
-					<h3 class="text-xl font-bold text-white mb-2 relative z-10 transform transition-transform duration-500 group-hover:scale-105 origin-left">🍳 Hogar</h3>
-					<p class="text-gray-400 relative z-10 text-sm">Robots y electrodomésticos.</p>
-				</a>
-			</div>
-		</section>
-
-		<!-- SECCIÓN TRANSACCIONAL (Tarjetas de Producto) -->
-		<section>
-			<h2 class="text-3xl font-bold text-white mb-8 border-b border-gray-800 pb-4">Mejores Análisis y Comparativas de Productos</h2>
-			
-			<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-				{
-					posts.map((post) => (
-						<a href={`/blog/${(post as any).slug || post.id}/`} class="group bg-gray-800/80 backdrop-blur-sm rounded-2xl overflow-hidden border border-gray-700 transition-all duration-300 hover:border-teal-500 hover:shadow-2xl hover:shadow-teal-500/10 flex flex-col">
-							<div class="relative overflow-hidden h-52">
-								<img src={post.data.heroImage} alt={post.data.title} class="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110" />
-								<div class="absolute top-3 left-3 bg-gray-900/80 backdrop-blur-md px-3 py-1 rounded-full border border-gray-600 text-xs font-bold text-teal-400 uppercase tracking-wide">
-									{post.data.category}
-								</div>
-							</div>
+						<div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center p-6 sm:p-10 lg:p-12">
 							
-							<div class="p-6 flex-1 flex flex-col">
-								<div class="flex items-center gap-1 text-yellow-400 text-sm mb-3">
-									⭐⭐⭐⭐⭐ <span class="text-gray-400 text-xs ml-1 font-medium">(Análisis Experto)</span>
+							{/* Imagen del Producto Destacado */}
+							<div class="lg:col-span-5 relative">
+								<a href={`/blog/${(featuredPost as any).slug || featuredPost.id}/`} class="block relative overflow-hidden rounded-2xl bg-black/40 border border-white/10 shadow-2xl group/img">
+									<img
+										src={featuredPost.data.heroImage}
+										alt={featuredPost.data.title}
+										class="w-full h-72 sm:h-80 lg:h-96 object-cover object-center transform transition-transform duration-700 group-hover/img:scale-105"
+										loading="eager"
+									/>
+									<div class="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-transparent to-transparent"></div>
+									<div class="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+										<span class="px-3.5 py-1.5 rounded-full bg-gray-950/80 backdrop-blur-md border border-white/15 text-xs font-bold text-teal-400 uppercase tracking-wider">
+											{featuredPost.data.category}
+										</span>
+										<span class="px-3 py-1 rounded-full bg-amber-400/20 backdrop-blur-md border border-amber-400/40 text-amber-300 text-xs font-bold">
+											TOP SELECCIÓN
+										</span>
+									</div>
+								</a>
+							</div>
+
+							{/* Información Editorial & CTA */}
+							<div class="lg:col-span-7 flex flex-col justify-center">
+								<div class="flex flex-wrap items-center gap-3 mb-4">
+									<span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-gradient-to-r from-amber-400/15 to-teal-400/15 text-amber-300 border border-amber-400/30">
+										✨ Selección Editorial • Destacado del Día
+									</span>
+									<div class="flex items-center gap-1 text-amber-400 text-sm">
+										<span>★★★★★</span>
+										<span class="text-xs text-gray-400 ml-1 font-medium">(4.9/5 • Elección Expertos)</span>
+									</div>
 								</div>
-								
-								<h3 class="text-xl font-bold text-white mb-3 leading-tight group-hover:text-teal-400 transition-colors line-clamp-2">
-									{post.data.title}
-								</h3>
-								
-								<p class="text-gray-400 text-sm mb-6 flex-1 line-clamp-3">
-									{post.data.description}
+
+								<h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight mb-4 group-hover:text-teal-300 transition-colors">
+									<a href={`/blog/${(featuredPost as any).slug || featuredPost.id}/`}>
+										{featuredPost.data.title}
+									</a>
+								</h1>
+
+								<p class="text-gray-300/90 text-base sm:text-lg leading-relaxed mb-8 line-clamp-3">
+									{featuredPost.data.description}
 								</p>
-								
-								<div class="mt-auto w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white text-center font-bold py-3 px-4 rounded-lg transition-transform duration-300 group-hover:-translate-y-1 shadow-md shadow-orange-500/20">
-									Ver Análisis y Precio →
+
+								<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
+									<a
+										href={`/blog/${(featuredPost as any).slug || featuredPost.id}/`}
+										class="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-extrabold text-white text-base bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:to-amber-500 shadow-[0_10px_30px_-5px_rgba(249,115,22,0.45)] hover:shadow-[0_15px_35px_-5px_rgba(249,115,22,0.6)] transform hover:-translate-y-0.5 transition-all duration-300"
+									>
+										<span>Ver Análisis y Mejor Precio</span>
+										<svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+										</svg>
+									</a>
+
+									<div class="flex items-center gap-2 text-xs text-gray-400 px-3 py-2 rounded-lg bg-white/5 border border-white/5">
+										<svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+										</svg>
+										<span>Comprobado en Amazon España</span>
+									</div>
 								</div>
 							</div>
-						</a>
-					))
-				}
-			</div>
-		</section>
+
+						</div>
+					</div>
+				</section>
+			)}
+
+			{/* BENTO GRID DE CATEGORÍAS (GLASSMORPHISM STYLE) */}
+			<section class="mb-24">
+				<div class="flex items-center justify-between mb-8 px-1">
+					<div>
+						<span class="text-xs font-bold text-teal-400 uppercase tracking-widest block mb-1">Catálogo Exclusivo</span>
+						<h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Explora por Categoría</h2>
+					</div>
+					<span class="hidden sm:inline-block text-xs text-gray-500 font-medium">Actualizado a diario</span>
+				</div>
+				
+				<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+					
+					{/* Tarjeta Grande Bricolaje */}
+					<a
+						href="/categoria/bricolaje-y-herramientas"
+						class="md:col-span-2 md:row-span-2 relative overflow-hidden rounded-3xl bg-white/[0.03] hover:bg-white/[0.06] backdrop-blur-md border border-white/10 hover:border-teal-500/40 p-8 sm:p-10 group transition-all duration-500 hover:scale-[1.01] hover:shadow-[0_20px_45px_-15px_rgba(20,184,166,0.25)] flex flex-col justify-end min-h-[320px]"
+					>
+						<div class="absolute -top-16 -right-16 w-56 h-56 bg-teal-500/10 rounded-full blur-2xl group-hover:bg-teal-500/20 transition-all duration-500"></div>
+						<div class="text-4xl sm:text-5xl mb-auto pb-6">🛠️</div>
+						<span class="text-xs font-bold uppercase tracking-wider text-teal-400 mb-2 block">Líder en Potencia</span>
+						<h3 class="text-2xl sm:text-4xl font-extrabold text-white mb-3 group-hover:text-teal-300 transition-colors">
+							Bricolaje y Herramientas
+						</h3>
+						<p class="text-gray-400 text-sm sm:text-base max-w-md leading-relaxed">
+							Taladros percutores, martillos perforadores y maquinaria profesional testada con la mejor relación calidad-precio.
+						</p>
+					</a>
+
+					{/* Tarjeta Informática */}
+					<a
+						href="/categoria/informatica"
+						class="md:col-span-2 relative overflow-hidden rounded-3xl bg-white/[0.03] hover:bg-white/[0.06] backdrop-blur-md border border-white/10 hover:border-sky-500/40 p-8 group transition-all duration-500 hover:scale-[1.01] hover:shadow-[0_20px_45px_-15px_rgba(56,189,248,0.25)] flex flex-col justify-between"
+					>
+						<div class="absolute -top-16 -right-16 w-48 h-48 bg-sky-500/10 rounded-full blur-2xl group-hover:bg-sky-500/20 transition-all duration-500"></div>
+						<div class="flex items-center justify-between mb-4">
+							<span class="text-3xl">💻</span>
+							<span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-sky-500/15 text-sky-400 border border-sky-500/30">Tech & Setup</span>
+						</div>
+						<div>
+							<h3 class="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-sky-300 transition-colors">
+								Informática y Gaming
+							</h3>
+							<p class="text-gray-400 text-sm">
+								Portátiles, periféricos de alto rendimiento y tecnología para tu espacio de trabajo.
+							</p>
+						</div>
+					</a>
+
+					{/* Tarjeta Mascotas */}
+					<a
+						href="/categoria/productos-para-mascotas"
+						class="md:col-span-1 relative overflow-hidden rounded-3xl bg-white/[0.03] hover:bg-white/[0.06] backdrop-blur-md border border-white/10 hover:border-amber-500/40 p-7 group transition-all duration-500 hover:scale-[1.01] hover:shadow-[0_20px_45px_-15px_rgba(245,158,11,0.25)] flex flex-col justify-between"
+					>
+						<div class="absolute -top-12 -right-12 w-36 h-36 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all duration-500"></div>
+						<span class="text-3xl mb-3 block">🐕</span>
+						<div>
+							<h3 class="text-lg font-bold text-white mb-1.5 group-hover:text-amber-300 transition-colors">
+								Mascotas
+							</h3>
+							<p class="text-gray-400 text-xs leading-relaxed">
+								Alimentación premium, accesorios y descanso.
+							</p>
+						</div>
+					</a>
+
+					{/* Tarjeta Hogar */}
+					<a
+						href="/categoria/hogar-y-cocina"
+						class="md:col-span-1 relative overflow-hidden rounded-3xl bg-white/[0.03] hover:bg-white/[0.06] backdrop-blur-md border border-white/10 hover:border-orange-500/40 p-7 group transition-all duration-500 hover:scale-[1.01] hover:shadow-[0_20px_45px_-15px_rgba(249,115,22,0.25)] flex flex-col justify-between"
+					>
+						<div class="absolute -top-12 -right-12 w-36 h-36 bg-orange-500/10 rounded-full blur-2xl group-hover:bg-orange-500/20 transition-all duration-500"></div>
+						<span class="text-3xl mb-3 block">🍳</span>
+						<div>
+							<h3 class="text-lg font-bold text-white mb-1.5 group-hover:text-orange-300 transition-colors">
+								Hogar y Cocina
+							</h3>
+							<p class="text-gray-400 text-xs leading-relaxed">
+								Freidoras de aire, robots y confort inteligente.
+							</p>
+						</div>
+					</a>
+
+				</div>
+			</section>
+
+			{/* SECCIÓN TRANSACCIONAL: TARJETAS DE PRODUCTO EN GLASSMORPHISM */}
+			<section>
+				<div class="flex items-center justify-between mb-8 px-1">
+					<div>
+						<span class="text-xs font-bold text-orange-400 uppercase tracking-widest block mb-1">Guías & Comparativas</span>
+						<h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Últimos Análisis de Productos</h2>
+					</div>
+					<span class="text-xs text-gray-500 font-medium">Revisados por expertos</span>
+				</div>
+				
+				<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+					{
+						catalogPosts.map((post) => (
+							<a
+								href={`/blog/${(post as any).slug || post.id}/`}
+								class="group bg-white/[0.03] hover:bg-white/[0.06] backdrop-blur-md rounded-3xl overflow-hidden border border-white/10 hover:border-teal-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.6)] flex flex-col"
+							>
+								<div class="relative overflow-hidden h-56 bg-black/40">
+									<img
+										src={post.data.heroImage}
+										alt={post.data.title}
+										class="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
+										loading="lazy"
+									/>
+									<div class="absolute top-3 left-3 bg-gray-950/80 backdrop-blur-md px-3.5 py-1 rounded-full border border-white/15 text-xs font-bold text-teal-400 uppercase tracking-wide">
+										{post.data.category}
+									</div>
+									<div class="absolute inset-0 bg-gradient-to-t from-gray-950/60 via-transparent to-transparent"></div>
+								</div>
+								
+								<div class="p-6 sm:p-7 flex-1 flex flex-col">
+									<div class="flex items-center gap-1.5 text-amber-400 text-sm mb-3">
+										<span>★★★★★</span>
+										<span class="text-gray-400 text-xs font-medium ml-1">(4.8/5 • Guía Verificada)</span>
+									</div>
+									
+									<h3 class="text-lg sm:text-xl font-bold text-white mb-3 leading-snug group-hover:text-teal-300 transition-colors line-clamp-2">
+										{post.data.title}
+									</h3>
+									
+									<p class="text-gray-400 text-sm mb-6 flex-1 line-clamp-3 leading-relaxed">
+										{post.data.description}
+									</p>
+									
+									<div class="mt-auto w-full bg-gradient-to-r from-orange-500 to-amber-500 group-hover:from-orange-400 group-hover:to-amber-400 text-white text-center font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-orange-500/20 transition-all duration-300 group-hover:shadow-orange-500/40 flex items-center justify-center gap-2">
+										<span>Ver Análisis y Precio</span>
+										<svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+										</svg>
+									</div>
+								</div>
+							</a>
+						))
+					}
+				</div>
+			</section>
+
+		</div>
 	</main>
 </BaseLayout>

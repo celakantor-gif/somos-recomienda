@@ -16,7 +16,7 @@ heroImage: "/img/stanley-fatmax-martillo-percutor-fme1250k-qs.jpg"
 
 Si buscas una herramienta que combine potencia y versatilidad para tus proyectos de bricolaje o construcción, el Stanley Fatmax Martillo Percutor FME1250K-QS es la opción perfecta. Ofrece un rendimiento excepcional que puede resolver tus necesidades de perforación de forma rápida y eficiente, ahorrándote tiempo y esfuerzo.
 
-<a href="https://amazon.es/dp/B00EL8UTAI/?tag=claramente03-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
+<a href="https://amazon.es/dp/B00EL8UTAI/?tag=somosrec-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
 
 ### Potencia y Rendimiento  
 El Stanley Fatmax FME1250K-QS cuenta con un motor potente de 1.250 W, ideal para realizar perforaciones en materiales duros como hormigón y ladrillo. Su capacidad de percusión alcanza hasta 48.000 impactos por minuto, lo que facilita la perforación rápida y efectiva.
@@ -46,5 +46,5 @@ A la hora de elegir un martillo percutor, considera la potencia y calidad del mo
 ## Veredicto Final  
 El Stanley Fatmax Martillo Percutor FME1250K-QS es una elección excepcional para aficionados al bricolaje y profesionales que buscan una herramienta potente y duradera. Recomendado para quienes trabajan con materiales duros y requieren eficacia, este martillo percutor cumple con las expectativas de rendimiento y comodidad.
 
-<a href="https://amazon.es/dp/B00EL8UTAI/?tag=claramente03-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
+<a href="https://amazon.es/dp/B00EL8UTAI/?tag=somosrec-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
 

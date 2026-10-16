@@ -16,7 +16,7 @@ heroImage: "/img/black-decker-taladro-percutor-bld783d2ka.jpg"
 
 Si buscas un taladro percutor que combine potencia y versatilidad, el Black+Decker BLD783D2KA es la solución perfecta. Ideal para quienes enfrentan trabajos de perforación exigentes, este taladro promete facilitar tus proyectos en casa o en el taller, sin sacrificar calidad ni durabilidad.
 
-<a href="https://amazon.es/dp/B0H7275B2R/?tag=claramente03-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
+<a href="https://amazon.es/dp/B0H7275B2R/?tag=somosrec-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
 
 ### Especificaciones y Potencia  
 El Black+Decker BLD783D2KA cuenta con un motor potente de 800W, permitiendo un rendimiento excepcional en todo tipo de materiales, desde madera hasta metal. Su velocidad de hasta 2800 RPM y un par motor de 30 Nm aseguran perforaciones rápidas y precisas, incluso en las tareas más difíciles.
@@ -46,5 +46,5 @@ Al elegir un taladro percutor, considera la potencia y calidad del motor, que as
 ## Veredicto Final  
 El Black+Decker Taladro Percutor BLD783D2KA es una excelente opción para quienes buscan una herramienta potente y versátil, ideal para amateurs y profesionales. Si necesitas un taladro fiable que facilite tus proyectos, este modelo es altamente recomendable.
 
-<a href="https://amazon.es/dp/B0H7275B2R/?tag=claramente03-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
+<a href="https://amazon.es/dp/B0H7275B2R/?tag=somosrec-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
 

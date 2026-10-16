@@ -16,7 +16,7 @@ heroImage: "/img/mejor-eneacro-martillo-perforador-1500w-2026.jpg"
 
 Si buscas un martillo perforador que combine potencia y versatilidad, el Eneacro Martillo Perforador 1500W es la solución ideal. Este equipo es perfecto para quienes necesitan realizar trabajos de perforación y demolición en diferentes superficies, facilitando tareas que antes parecían complicadas.
 
-<a href="https://amazon.es/dp/B08ZDGZK6N/?tag=claramente03-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
+<a href="https://amazon.es/dp/B08ZDGZK6N/?tag=somosrec-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
 
 ### Potencia y Rendimiento  
 El Eneacro Martillo Perforador cuenta con un motor de 1500W que proporciona una fuerza de impacto de hasta 4500 BPM, ideal para perforar materiales duros como hormigón y piedra. Su diseño robusto asegura un rendimiento superior, incluso en tareas exigentes.
@@ -45,5 +45,5 @@ Al considerar la compra del Eneacro Martillo Perforador 1500W, evalúa la potenc
 ## Veredicto Final  
 El Eneacro Martillo Perforador 1500W es una excelente opción para aficionados al bricolaje y profesionales que requieren una herramienta eficaz y versátil. Su potencia, ergonomía y durabilidad lo convierten en una inversión valiosa para cualquier caja de herramientas. Si buscas calidad y rendimiento, este martillo perforador es altamente recomendable.
 
-<a href="https://amazon.es/dp/B08ZDGZK6N/?tag=claramente03-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
+<a href="https://amazon.es/dp/B08ZDGZK6N/?tag=somosrec-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
 

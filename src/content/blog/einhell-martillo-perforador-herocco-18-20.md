@@ -16,7 +16,7 @@ heroImage: "/img/einhell-martillo-perforador-herocco-18-20.jpg"
 
 Si buscas una solución eficaz para perforar y realizar trabajos de bricolaje en casa, el Einhell Martillo Perforador HEROCCO 18/20 es la herramienta que necesitas. Con la capacidad de afrontar diversas superficies y una excelente relación calidad-precio, esta herramienta se convierte en un aliado indispensable para tus proyectos.
 
-<a href="https://amazon.es/dp/B07GSD9N94/?tag=claramente03-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
+<a href="https://amazon.es/dp/B07GSD9N94/?tag=somosrec-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
 
 ### Especificaciones Clave  
 El Einhell HEROCCO 18/20 es un taladro percutor a batería que funciona con una potente batería de 18V, lo que garantiza una gran movilidad sin la molestia de los cables. Su motor ofrece hasta 20 Nm de par, suficiente para perforar materiales como madera, metal y mampostería.  
@@ -42,5 +42,5 @@ Al elegir el Einhell Martillo Perforador HEROCCO 18/20, considera su potencia de
 ## Veredicto Final  
 El Einhell Martillo Perforador HEROCCO 18/20 es una opción excepcional para aficionados al bricolaje y profesionales que buscan una herramienta potente y versátil. Si valoras la calidad, la comodidad y la movilidad, esta herramienta es una inversión que no te decepcionará.
 
-<a href="https://amazon.es/dp/B07GSD9N94/?tag=claramente03-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
+<a href="https://amazon.es/dp/B07GSD9N94/?tag=somosrec-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
 
