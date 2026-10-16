@@ -22,8 +22,7 @@ const {
 	<head>
 		<BaseHead title={title} description={description} />
 		<Analytics />
-		{/* Script Tailwind para garantizar la compilación completa de la Bento Grid y estilos de conversión */}
-		<script is:inline src="https://cdn.tailwindcss.com"></script>
+		{/* Tailwind centralizado en BaseHead.astro */}
 		<script
 			is:inline
 			async

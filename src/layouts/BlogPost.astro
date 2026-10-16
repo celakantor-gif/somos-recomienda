@@ -1,6 +1,6 @@
 ---
 import type { CollectionEntry } from 'astro:content';
-import Layout from '../layouts/Layout.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import AmazonCTA from '../components/AmazonCTA.astro';
 import AdSenseRotator from '../components/AdSenseRotator.astro';
@@ -125,7 +125,7 @@ const newsArticleSchema = {
 };
 ---
 
-<Layout title={title} description={description} showRails={isBlogPost} disableDefaultOg={true}>
+<BaseLayout title={title} description={description}>
 	<Fragment slot="head">
 		<!-- Open Graph / Facebook -->
 		<meta property="og:type" content="article" />
@@ -144,117 +144,119 @@ const newsArticleSchema = {
 		<script type="application/ld+json" set:html={JSON.stringify(newsArticleSchema)} />
 	</Fragment>
 
-	<Fragment slot="hero-section">
-		<header class="article-hero">
+	{/* CABECERA HERO E IMAGEN DE PORTADA DEL ARTÍCULO (CONTAINED) */}
+	<header class="w-full max-w-5xl mx-auto px-4 pt-10 pb-4">
+		{isBlogPost && (
+			<div class="breadcrumbs-container max-w-3xl mx-auto mb-6">
+				<Breadcrumbs categoria={category} titulo={title} />
+			</div>
+		)}
+		{heroImage && (
+			<div class="hero-image-wrap max-w-5xl mx-auto mb-8 overflow-hidden rounded-2xl border border-white/10 shadow-2xl bg-black/40">
+				<img src={heroImage} alt={title} class="featured-image w-full max-h-[480px] object-cover mx-auto block" loading="eager" />
+			</div>
+		)}
+
+		<div class="hero-meta max-w-3xl mx-auto text-center mb-6">
+			<h1 class="article-title text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight mb-4 leading-tight">{title}</h1>
+
 			{isBlogPost && (
-				<div class="breadcrumbs-container">
-					<Breadcrumbs categoria={category} titulo={title} />
-				</div>
-			)}
-			{heroImage && (
-				<div class="hero-image-wrap">
-					<img src={heroImage} alt={title} class="featured-image" loading="eager" />
-				</div>
-			)}
-
-			<div class="hero-meta">
-				<h1 class="article-title">{title}</h1>
-
-				{isBlogPost && (
-					<div class="publication-date-wrapper">
-						<span class="publication-date-pill">
-							<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-							</svg>
-							<span>Publicado el: <strong><FormattedDate date={pubDate} /></strong></span>
-							{updatedDate && (
-								<span class="last-updated-on">
-									(Actualizado el <FormattedDate date={updatedDate} />)
-								</span>
-							)}
-						</span>
-					</div>
-				)}
-
-				{isBlogPost && (
-					<div class="meta-badges">
-						{category && (
-							<a
-								class:list={['category-badge', { 'badge-noticias': esNoticia }]}
-								href={`/categoria/${category.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`}
-							>
-								{category}
-							</a>
+				<div class="publication-date-wrapper my-3 flex items-center justify-center">
+					<span class="publication-date-pill inline-flex items-center gap-2 text-sm text-gray-200 bg-white/5 border border-white/10 px-4 py-1.5 rounded-full">
+						<svg class="w-4 h-4 text-teal-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+						</svg>
+						<span>Publicado el: <strong><FormattedDate date={pubDate} /></strong></span>
+						{updatedDate && (
+							<span class="last-updated-on italic text-gray-500 ml-1.5">
+								(Actualizado el <FormattedDate date={updatedDate} />)
+							</span>
 						)}
-						<span class="author">Autor: Redacción Recomendación</span>
-						{esNoticia ? (
-							<span class="badge badge-noticias">🔴 Actualidad</span>
-						) : (
-							<span class="badge">⚡ Lectura rápida</span>
-						)}
-					</div>
-				)}
-			</div>
+					</span>
+				</div>
+			)}
 
-			{mostrarAfiliacion && (
-				<div class="hero-cta-wrap">
-					<AmazonCTA
-						id="cta-hero"
-						href={amazonUrl}
-						producto={palabraClaveLimpia}
-						texto={texto_boton}
-						store="amazon"
-						slug={currentSlug}
-						position="intro"
-					/>
-				</div>
-			)}
-		</header>
-	</Fragment>
-
-	<article class="article-content">
-		<div class="prose">
-			<AdSenseRotator position="in-article" id="ad-rotator-in-article" />
-			<slot />
-			{mostrarAfiliacion && (
-				<div class="article-cta-block" id="cta-faq-wrap">
-					<AmazonCTA
-						id="cta-faq"
-						href={amazonUrl}
-						producto={palabraClaveLimpia}
-						texto={texto_boton}
-						store="amazon"
-						slug={currentSlug}
-						position="conclusion"
-					/>
-				</div>
-			)}
 			{isBlogPost && (
-				<div class="article-author-block">
-					<AuthorBox />
+				<div class="meta-badges flex flex-wrap items-center justify-center gap-2.5 mt-3">
+					{category && (
+						<a
+							class:list={['category-badge px-3.5 py-1 rounded-full text-xs font-bold bg-white/10 text-gray-200 hover:bg-teal-400 hover:text-gray-950 transition-colors border border-white/10', { 'badge-noticias': esNoticia }]}
+							href={`/categoria/${category.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`}
+						>
+							{category}
+						</a>
+					)}
+					<span class="author text-xs sm:text-sm text-gray-400 font-semibold">Autor: Redacción Recomendación</span>
+					{esNoticia ? (
+						<span class="badge badge-noticias px-3.5 py-1 rounded-full text-xs font-bold bg-red-500/15 text-red-400 border border-red-500/30">🔴 Actualidad</span>
+					) : (
+						<span class="badge px-3.5 py-1 rounded-full text-xs font-bold bg-teal-400/15 text-teal-400 border border-teal-400/30">⚡ Lectura rápida</span>
+					)}
 				</div>
 			)}
-			{isBlogPost && (
-				<div class="article-related-block">
-					<ArticulosRelacionados categoria={category} currentSlug={currentSlug} />
-				</div>
-			)}
-			<div class="article-adsense-bottom-block">
-				<AdSenseRotator position="bottom" id="ad-rotator-bottom" />
-			</div>
-			<div class="back-wrap">
-				<a class="back-btn" href="/">
-					<span>←</span>
-					<span>Volver a todos los artículos</span>
-				</a>
-			</div>
 		</div>
-	</article>
+
+		{mostrarAfiliacion && (
+			<div class="hero-cta-wrap max-w-3xl mx-auto flex justify-center mt-6 mb-2">
+				<AmazonCTA
+					id="cta-hero"
+					href={amazonUrl}
+					producto={palabraClaveLimpia}
+					texto={texto_boton}
+					store="amazon"
+					slug={currentSlug}
+					position="intro"
+				/>
+			</div>
+		)}
+	</header>
+
+	{/* CONTENEDOR PRINCIPAL DEL ARTÍCULO: CENTRADO Y EXPERIENCIA PREMIUM DE LECTURA */}
+	<main class="w-full max-w-3xl mx-auto px-4 py-10 text-gray-300">
+		<article class="article-content w-full">
+			<div class="prose max-w-none text-gray-300 leading-relaxed text-base sm:text-lg">
+				<AdSenseRotator position="in-article" id="ad-rotator-in-article" />
+				<slot />
+				{mostrarAfiliacion && (
+					<div class="article-cta-block my-10 flex justify-center" id="cta-faq-wrap">
+						<AmazonCTA
+							id="cta-faq"
+							href={amazonUrl}
+							producto={palabraClaveLimpia}
+							texto={texto_boton}
+							store="amazon"
+							slug={currentSlug}
+							position="conclusion"
+						/>
+					</div>
+				)}
+				{isBlogPost && (
+					<div class="article-author-block my-10">
+						<AuthorBox />
+					</div>
+				)}
+				{isBlogPost && (
+					<div class="article-related-block my-10">
+						<ArticulosRelacionados categoria={category} currentSlug={currentSlug} />
+					</div>
+				)}
+				<div class="article-adsense-bottom-block my-8">
+					<AdSenseRotator position="bottom" id="ad-rotator-bottom" />
+				</div>
+				<div class="back-wrap text-center mt-12 mb-6">
+					<a class="back-btn inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-teal-400 hover:bg-teal-300 text-gray-950 font-extrabold shadow-lg shadow-teal-500/20 transition-all hover:-translate-y-0.5" href="/">
+						<span>←</span>
+						<span>Volver a todos los artículos</span>
+					</a>
+				</div>
+			</div>
+		</article>
+	</main>
 
 	<style>
 		.article-hero {
 			width: 100%;
-			max-width: 56rem; /* max-w-4xl = 896px */
+			max-width: 64rem; /* max-w-5xl */
 			margin: 0 auto;
 			text-align: center;
 			padding: 1rem 1rem 0;
@@ -427,7 +429,7 @@ const newsArticleSchema = {
 
 		.article-content {
 			width: 100%;
-			max-width: 800px;
+			max-width: 48rem; /* max-w-3xl */
 			margin: 0 auto;
 			padding-bottom: 4rem;
 			box-sizing: border-box;
@@ -435,11 +437,17 @@ const newsArticleSchema = {
 
 		.prose {
 			width: 100%;
-			max-width: 100%;
+			max-width: 48rem; /* max-w-3xl */
 			margin: 0 auto;
 			padding: 0;
 			color: #d1d5db;
 			box-sizing: border-box;
+		}
+
+		.prose :global(.btn-amazon-cta) {
+			display: flex !important;
+			margin-left: auto !important;
+			margin-right: auto !important;
 		}
 
 		.prose :global(h2) {
@@ -609,4 +617,4 @@ const newsArticleSchema = {
 			}
 		}
 	</script>
-</Layout>
+</BaseLayout>
