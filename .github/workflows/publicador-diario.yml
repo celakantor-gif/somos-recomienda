@@ -33,6 +33,6 @@ jobs:
         run: |
           git config --global user.name "Robot Recomendacion"
           git config --global user.email "bot@recomendacion.com"
-          git add src/content/blog/ public/img/ keywords_productos.csv
-          git commit -m "🤖 Auto-publicación: Nuevo artículo añadido" || echo "Sin cambios"
+          git add src/content/blog/ public/img/ keywords_productos.csv historial_productos.txt
+          git commit -m "🤖 Auto-publicación: Nuevos artículos añadidos" || echo "Sin cambios"
           git push

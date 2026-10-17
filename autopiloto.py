@@ -20,42 +20,29 @@ categorias = [
     "cuidado-personal"
 ]
 
-def obtener_productos_previos():
-    """Recopila palabras clave o productos ya existentes para evitar repeticiones."""
-    previos = []
-    blog_dir = os.path.join("src", "content", "blog")
-    if os.path.exists(blog_dir):
-        for fname in os.listdir(blog_dir):
-            if fname.endswith((".md", ".mdx")):
-                filepath = os.path.join(blog_dir, fname)
-                try:
-                    with open(filepath, "r", encoding="utf-8") as f:
-                        for line in f:
-                            if line.startswith("keyword:"):
-                                val = line.split(":", 1)[1].strip().strip('"\'')
-                                if val:
-                                    previos.append(val)
-                                break
-                except Exception:
-                    pass
-    return previos
+HISTORIAL_FILE = "historial_productos.txt"
 
-productos_generados = obtener_productos_previos()
+# Si el archivo no existe, crearlo vacío
+if not os.path.exists(HISTORIAL_FILE):
+    with open(HISTORIAL_FILE, "w", encoding="utf-8") as f:
+        pass
+
+# Leer el contenido del archivo y guardarlo en una lista de Python (eliminando saltos de línea)
+with open(HISTORIAL_FILE, "r", encoding="utf-8") as f:
+    lista_historial = [line.strip() for line in f if line.strip()]
+
 total_categorias = len(categorias)
-
 print(f"🤖 Iniciando autopiloto escalado ({total_categorias} categorías diarias)...")
+print(f"🧠 Memoria a largo plazo cargada: {len(lista_historial)} productos en el historial.")
 
 for idx, categoria in enumerate(categorias, start=1):
     print(f"\n--- 📂 [{idx}/{total_categorias}] Categoría: {categoria} ---")
 
-    exclusion_text = ""
-    if productos_generados:
-        ultimos = productos_generados[-25:]
-        exclusion_text = f" IMPORTANTE: NO repitas ninguno de estos productos: {ultimos}."
-
     prompt = (
         f"Genera el nombre exacto de un modelo de producto muy vendido en Amazon España de la categoría '{categoria}'. "
-        f"Debe ser un producto específico y real (ej: 'Makita DHP482Z' o 'Logitech MX Master 3S').{exclusion_text} "
+        f"Debe ser un producto específico y real (ej: 'Makita DHP482Z' o 'Logitech MX Master 3S'). "
+        f"REGLA ABSOLUTA: Bajo ningún concepto puedes generar un producto que esté en esta lista de excluidos: {lista_historial}. "
+        f"Si la lista tiene elementos, busca un producto diferente, quizás el 2º, 3º o 4º más vendido. "
         f"Responde ÚNICAMENTE con el nombre del producto, sin comillas ni texto adicional."
     )
 
@@ -67,7 +54,14 @@ for idx, categoria in enumerate(categorias, start=1):
         )
 
         producto = respuesta.choices[0].message.content.strip().strip('"\'')
-        productos_generados.append(producto)
+
+        # Añadir a la lista en memoria (para que no lo repita en el mismo ciclo)
+        lista_historial.append(producto)
+
+        # Escribirlo inmediatamente en historial_productos.txt (usando modo append 'a')
+        with open(HISTORIAL_FILE, "a", encoding="utf-8") as f:
+            f.write(f"{producto}\n")
+
         print(f"📦 Producto seleccionado por IA: {producto}")
 
         # Preparamos el CSV para escritor.py
