@@ -228,32 +228,33 @@ def generar_resena_producto(
     memoria_imagenes: Set[str],
     content_dir: str = CONTENT_DIR,
     amazon_tag: str = AMAZON_AFFILIATE_TAG,
-    extension: str = "md",
+    extension: str = "mdx",
 ) -> str:
     """
     Genera un artículo de reseña de producto transaccional de alta conversión para Amazon.
-    Estructura Markdown forzada para maximizar conversión:
+    Estructura MDX / Markdown forzada para maximizar conversión (CRO):
       - Titular (H1): Puramente transaccional (ej: 'Mejor [Keyword] en 2026: Análisis y Opiniones').
       - Intro Corta: Párrafo de enganche de 50 palabras basado en el problema del usuario.
-      - Above the Fold CTA: Botón HTML exacto:
-        <a href="https://amazon.es/dp/{asin_amazon}/?tag=TU_NUEVO_TAG_AQUI" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
-      - Análisis: Rendimiento y H2 con 'Pros y Contras' en formato lista.
-      - Guía: H2 con una 'Guía de Compra' generada por la IA.
+      - Componente MDX ProsCons: Caja Glassmorphism interactiva con pros (✅) y contras (❌).
+      - Above the Fold CTA: Botón de conversión directo hacia Amazon.
+      - Análisis: Rendimiento, especificaciones y H2 con 'Pros y Contras'.
+      - Guía: H2 con 'Guía de Compra' y Veredicto Final.
     """
     client = get_openai_client()
 
     system_prompt = (
         f"Estamos en el año {anio_actual}. Eres el redactor senior y copywriter de conversión de 'Somos Recomienda', "
         "un portal especializado en reseñas de productos y comparativas de afiliación de Amazon España.\n"
-        "Tu misión es redactar reseñas transaccionales exhaustivas, directas y persuasivas, "
+        "Tu misión es redactar reseñas transaccionales exhaustivas, directas y persuasivas en formato MDX, "
         "orientadas a resolver el problema del comprador y maximizar la intención de clic hacia Amazon.\n\n"
         "REGLAS ESTRUCTURALES OBLIGATORIAS:\n"
         f"1. TITULAR (H1): Puramente transaccional. Fórmula: 'Mejor [Keyword] en {anio_actual}: Análisis y Opiniones'.\n"
         "2. INTRODUCCIÓN CORTA: Exactamente un párrafo de unas 50 palabras enfocado en el dolor/necesidad real del usuario y por qué necesita este producto.\n"
-        "3. ANÁLISIS: Análisis riguroso explicando especificaciones, calidad, durabilidad y experiencia real de uso.\n"
-        "4. PROS Y CONTRAS: Sección con título '## Pros y Contras' en formato de listas con viñetas destacando pros y contras.\n"
-        "5. GUÍA DE COMPRA: Sección con título '## Guía de Compra' explicando de forma sintética los 3 o 4 criterios decisivos antes de comprar.\n"
-        "6. TONO: Experto, honesto, empático y 100% transaccional."
+        "3. PROS Y CONTRAS MDX: Genera obligatoriamente el componente interactivo <ProsCons pros={[...]} cons={[...]} /> con 3 o 4 ventajas directas y 2 inconvenientes honestos.\n"
+        "4. ANÁLISIS: Análisis riguroso explicando especificaciones, calidad, durabilidad y experiencia real de uso.\n"
+        "5. PROS Y CONTRAS: Sección detallada con título '## Pros y Contras' en formato de listas con viñetas destacando pros y contras.\n"
+        "6. GUÍA DE COMPRA: Sección con título '## Guía de Compra' explicando de forma sintética los 3 o 4 criterios decisivos antes de comprar.\n"
+        "7. TONO: Experto, honesto, empático y 100% transaccional."
     )
 
     user_prompt = f"""Redacta una reseña de producto transaccional para la siguiente palabra clave:
@@ -269,6 +270,8 @@ DESCRIPCION: [Meta descripción SEO persuasiva para CTR en Google de 140 a 155 c
 TERMINO_IMAGEN: [2 a 3 palabras en inglés para buscar fotografía horizontal en Pixabay, ej: 'cordless drill']
 INTRO:
 [Párrafo de introducción y enganche de aproximadamente 50 palabras abordando directamente el dolor, problema o necesidad inmediata del comprador]
+PROS_CONS_MDX:
+<ProsCons pros={["[Ventaja breve 1]", "[Ventaja breve 2]", "[Ventaja breve 3]"]} cons={["[Desventaja breve 1]", "[Desventaja breve 2]"]} />
 ANALISIS:
 [Análisis exhaustivo con subtítulos explicando características clave, materiales, funcionamiento, ergonomía y experiencia de usuario]
 PROS_CONTRAS:
@@ -304,7 +307,8 @@ VEREDICTO:
     match_titulo = re.search(r"TITULO:\s*(.+)", raw_text, re.IGNORECASE)
     match_desc = re.search(r"DESCRIPCION:\s*(.+)", raw_text, re.IGNORECASE)
     match_img_en = re.search(r"TERMINO_IMAGEN:\s*(.+)", raw_text, re.IGNORECASE)
-    match_intro = re.search(r"INTRO:\s*([\s\S]*?)(?=ANALISIS:|$)", raw_text, re.IGNORECASE)
+    match_intro = re.search(r"INTRO:\s*([\s\S]*?)(?=PROS_CONS_MDX:|ANALISIS:|$)", raw_text, re.IGNORECASE)
+    match_pros_cons_mdx = re.search(r"PROS_CONS_MDX:\s*(<ProsCons[\s\S]*?/>)", raw_text, re.IGNORECASE)
     match_analisis = re.search(r"ANALISIS:\s*([\s\S]*?)(?=PROS_CONTRAS:|$)", raw_text, re.IGNORECASE)
     match_pros = re.search(r"PROS_CONTRAS:\s*([\s\S]*?)(?=GUIA_COMPRA:|$)", raw_text, re.IGNORECASE)
     match_guia = re.search(r"GUIA_COMPRA:\s*([\s\S]*?)(?=VEREDICTO:|$)", raw_text, re.IGNORECASE)
@@ -330,6 +334,25 @@ VEREDICTO:
     pros_contras = match_pros.group(1).strip() if match_pros else ""
     guia_compra = match_guia.group(1).strip() if match_guia else ""
     veredicto = match_veredicto.group(1).strip() if match_veredicto else ""
+
+    # Extraer o construir componente MDX ProsCons
+    pros_cons_mdx = match_pros_cons_mdx.group(1).strip() if match_pros_cons_mdx else ""
+    if not pros_cons_mdx:
+        m = re.search(r"(<ProsCons\s+[\s\S]*?/>)", raw_text)
+        if m:
+            pros_cons_mdx = m.group(1).strip()
+        elif pros_contras:
+            # Fallback seguro: extraer puntos de pros_contras
+            partes = pros_contras.split("### Aspectos")
+            ventajas = re.findall(r"-\s*(.+)", partes[0]) if len(partes) > 0 else []
+            aspectos = re.findall(r"-\s*(.+)", partes[1]) if len(partes) > 1 else []
+            pros_list = [v.strip().replace('"', '\\"') for v in ventajas[:3]] or ["Excelente rendimiento", "Gran durabilidad", "Fácil de usar"]
+            cons_list = [a.strip().replace('"', '\\"') for a in aspectos[:2]] or ["Precio elevado", "Disponibilidad limitada"]
+            p_json = json.dumps(pros_list, ensure_ascii=False)
+            c_json = json.dumps(cons_list, ensure_ascii=False)
+            pros_cons_mdx = f'<ProsCons pros={{{p_json}}} cons={{{c_json}}} />'
+        else:
+            pros_cons_mdx = '<ProsCons pros={["Gran calidad de construcción", "Excelente relación calidad-precio"]} cons={["Inversión inicial algo elevada"]} />'
 
     # Respaldo si el LLM no separó con etiquetas
     if not intro and not analisis:
@@ -373,12 +396,16 @@ VEREDICTO:
 
     fecha_hoy = datetime.now().strftime("%Y-%m-%d")
 
-    # Ensamblar estructura Markdown optimizada para conversión
+    # Ensamblar estructura MDX / Markdown optimizada para conversión (CRO)
     bloques_markdown = []
+    if ext_limpia == "mdx":
+        bloques_markdown.append("import ProsCons from '../../components/ProsCons.astro';\n")
     bloques_markdown.append(f"# {titulo}\n")
     bloques_markdown.append(f"![{titulo}]({hero_image})\n")
     if intro:
         bloques_markdown.append(f"{intro}\n")
+    if pros_cons_mdx:
+        bloques_markdown.append(f"{pros_cons_mdx}\n")
     bloques_markdown.append(f"{cta_above_the_fold}\n")
     if analisis:
         bloques_markdown.append(f"{analisis}\n")
@@ -425,7 +452,7 @@ def agente_reviewer(
     anio_actual: Optional[int] = None,
     amazon_tag: Optional[str] = None,
     limite: Optional[int] = None,
-    extension: str = "md",
+    extension: str = "mdx",
 ) -> List[str]:
     """
     Agente único de reseñas transaccionales de afiliación para 'Somos Recomienda'.
@@ -607,9 +634,9 @@ def main():
     parser.add_argument(
         "--ext",
         type=str,
-        default="md",
+        default="mdx",
         choices=["md", "mdx"],
-        help="Extensión del archivo a generar: 'md' o 'mdx' (por defecto: md).",
+        help="Extensión del archivo a generar: 'md' o 'mdx' (por defecto: mdx).",
     )
 
     args = parser.parse_args()

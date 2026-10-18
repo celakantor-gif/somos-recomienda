@@ -1,0 +1,94 @@
+---
+interface Props {
+	pros?: string[] | string;
+	cons?: string[] | string;
+}
+
+const { pros = [], cons = [] } = Astro.props;
+
+const normalizeList = (items: string[] | string): string[] => {
+	if (Array.isArray(items)) return items;
+	if (typeof items === 'string') {
+		try {
+			const parsed = JSON.parse(items);
+			if (Array.isArray(parsed)) return parsed;
+		} catch {
+			return items.split(',').map((s) => s.trim()).filter(Boolean);
+		}
+	}
+	return [];
+};
+
+const prosList = normalizeList(pros);
+const consList = normalizeList(cons);
+---
+
+<div class="pros-cons-container my-10 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-white/10 p-6 sm:p-8 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]">
+	<div class="flex items-center gap-2.5 mb-6 pb-4 border-b border-white/10">
+		<span class="text-2xl select-none">⚖️</span>
+		<div>
+			<h3 class="text-xl font-bold text-white tracking-tight !m-0 !p-0 leading-tight">Veredicto Rápido: Pros y Contras</h3>
+			<p class="text-xs text-gray-400 !m-0 !p-0 mt-0.5">Evaluación directa para una decisión de compra informada</p>
+		</div>
+	</div>
+
+	<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+		{/* Columna Pros */}
+		<div class="rounded-xl bg-emerald-500/[0.06] border border-emerald-500/20 p-5 flex flex-col transition-all duration-300 hover:border-emerald-500/40 hover:bg-emerald-500/[0.09]">
+			<div class="flex items-center gap-2 mb-4 font-bold text-emerald-400 text-base">
+				<span class="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-300 text-sm font-black shadow-[0_0_12px_rgba(16,185,129,0.3)]">
+					✅
+				</span>
+				<span class="tracking-wide">Puntos Fuertes</span>
+			</div>
+			<ul class="space-y-3 !m-0 !p-0 list-none flex-1">
+				{prosList.map((pro) => (
+					<li class="flex items-start gap-2.5 text-gray-200 text-sm sm:text-base leading-snug !m-0 !p-0">
+						<span class="text-emerald-400 shrink-0 mt-0.5 select-none font-bold">✓</span>
+						<span>{pro}</span>
+					</li>
+				))}
+				{prosList.length === 0 && (
+					<li class="text-sm text-gray-400 italic">No se han especificado pros destacados.</li>
+				)}
+			</ul>
+		</div>
+
+		{/* Columna Contras */}
+		<div class="rounded-xl bg-rose-500/[0.06] border border-rose-500/20 p-5 flex flex-col transition-all duration-300 hover:border-rose-500/40 hover:bg-rose-500/[0.09]">
+			<div class="flex items-center gap-2 mb-4 font-bold text-rose-400 text-base">
+				<span class="flex items-center justify-center w-7 h-7 rounded-full bg-rose-500/20 text-rose-300 text-sm font-black shadow-[0_0_12px_rgba(244,63,94,0.3)]">
+					❌
+				</span>
+				<span class="tracking-wide">A Tener en Cuenta</span>
+			</div>
+			<ul class="space-y-3 !m-0 !p-0 list-none flex-1">
+				{consList.map((con) => (
+					<li class="flex items-start gap-2.5 text-gray-200 text-sm sm:text-base leading-snug !m-0 !p-0">
+						<span class="text-rose-400 shrink-0 mt-0.5 select-none font-bold">✕</span>
+						<span>{con}</span>
+					</li>
+				))}
+				{consList.length === 0 && (
+					<li class="text-sm text-gray-400 italic">No se han detectado inconvenientes críticos.</li>
+				)}
+			</ul>
+		</div>
+	</div>
+</div>
+
+<style>
+	/* Desactivar estilos heredados de .prose en listas y títulos de este componente */
+	.pros-cons-container ul {
+		list-style: none !important;
+		padding-left: 0 !important;
+		margin: 0 !important;
+	}
+	.pros-cons-container li {
+		margin-bottom: 0.75rem !important;
+		padding-left: 0 !important;
+	}
+	.pros-cons-container li:last-child {
+		margin-bottom: 0 !important;
+	}
+</style>
