@@ -74,6 +74,11 @@ for idx, categoria in enumerate(categorias, start=1):
         os.system("python escritor.py")
         print(f"✅ Artículo generado para '{categoria}'.")
 
+        # Generar Pin de Pinterest de alta conversión (1000x1500)
+        print(f"📌 Generando Pin de Pinterest para '{producto}'...")
+        os.system("python generador_pinterest.py")
+        print(f"📌 Pin de Pinterest completado para '{categoria}'.")
+
     except Exception as e:
         print(f"❌ Error al procesar categoría '{categoria}': {e}")
 

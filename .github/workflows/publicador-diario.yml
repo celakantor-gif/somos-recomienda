@@ -20,7 +20,7 @@ jobs:
           python-version: '3.10'
 
       - name: Instalar dependencias
-        run: pip install openai requests
+        run: pip install openai requests Pillow
 
       - name: Ejecutar Piloto Automático
         env:
@@ -33,6 +33,6 @@ jobs:
         run: |
           git config --global user.name "Robot Recomendacion"
           git config --global user.email "bot@recomendacion.com"
-          git add src/content/blog/ public/img/ keywords_productos.csv historial_productos.txt
-          git commit -m "🤖 Auto-publicación: Nuevos artículos añadidos" || echo "Sin cambios"
+          git add src/content/blog/ public/img/ public/social/ keywords_productos.csv historial_productos.txt
+          git commit -m "🤖 Auto-publicación: Nuevos artículos y pines añadidos" || echo "Sin cambios"
           git push
