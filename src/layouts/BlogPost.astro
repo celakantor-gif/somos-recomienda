@@ -229,19 +229,6 @@ if (relatedPosts.length < 3) {
 			)}
 		</div>
 
-		{mostrarAfiliacion && (
-			<div class="hero-cta-wrap max-w-3xl mx-auto flex justify-center mt-6 mb-2">
-				<AmazonCTA
-					id="cta-hero"
-					href={amazonUrl}
-					producto={palabraClaveLimpia}
-					texto={texto_boton}
-					store="amazon"
-					slug={currentSlug}
-					position="intro"
-				/>
-			</div>
-		)}
 	</header>
 
 	{/* CONTENEDOR PRINCIPAL DEL ARTÍCULO: CENTRADO Y EXPERIENCIA PREMIUM DE LECTURA */}
@@ -251,9 +238,9 @@ if (relatedPosts.length < 3) {
 				<AdSenseRotator position="in-article" id="ad-rotator-in-article" />
 				<slot />
 				{mostrarAfiliacion && (
-					<div class="article-cta-block my-10 flex justify-center" id="cta-faq-wrap">
+					<div class="article-cta-block my-10 flex justify-center" id="cta-bottom-wrap">
 						<AmazonCTA
-							id="cta-faq"
+							id="cta-bottom"
 							href={amazonUrl}
 							producto={palabraClaveLimpia}
 							texto={texto_boton}
@@ -534,10 +521,9 @@ if (relatedPosts.length < 3) {
 			box-sizing: border-box;
 		}
 
+		/* Ocultar botones inline redundantes inyectados en markdown para asegurar un único CTA al final */
 		.prose :global(.btn-amazon-cta) {
-			display: flex !important;
-			margin-left: auto !important;
-			margin-right: auto !important;
+			display: none !important;
 		}
 
 		.prose :global(h2) {
@@ -683,27 +669,6 @@ if (relatedPosts.length < 3) {
 			const firstP = document.querySelector('.prose > p');
 			if (firstP && firstP !== inArticleAd && firstP.parentNode) {
 				firstP.after(inArticleAd);
-			}
-		}
-
-		// Inyección dinámica del segundo botón (cta-faq) antes de la sección FAQ con fallback garantizado
-		const ctaFaqElement = document.getElementById('cta-faq-wrap') || document.getElementById('cta-faq');
-		if (ctaFaqElement) {
-			const prose = document.querySelector('.prose');
-			const h2s = Array.from(document.querySelectorAll('.prose h2'));
-			const faq = h2s.find((h) => /pregunt|faq|duda/i.test(h.textContent || ''));
-			if (faq) {
-				faq.before(ctaFaqElement);
-			} else {
-				const authorBlock = document.querySelector('.article-author-block');
-				if (authorBlock) {
-					authorBlock.before(ctaFaqElement);
-				} else {
-					const backWrap = document.querySelector('.back-wrap');
-					if (backWrap) {
-						backWrap.before(ctaFaqElement);
-					}
-				}
 			}
 		}
 	</script>

@@ -379,24 +379,10 @@ VEREDICTO:
         memoria_imagenes=memoria_imagenes,
     )
 
-    # Inserción obligatoria de botón Above the Fold CTA con el ASIN o búsqueda de afiliado en Amazon
-    if asin_amazon:
-        amazon_url = f"https://amazon.es/dp/{asin_amazon}/?tag={amazon_tag}"
-    else:
-        from urllib.parse import quote_plus
-        amazon_url = f"https://www.amazon.es/s?k={quote_plus(keyword)}&tag={amazon_tag}"
-    cta_above_the_fold = (
-        f'<a href="{amazon_url}" class="btn-amazon-cta">'
-        f'🔥 Ver Mejor Precio y Ofertas en Amazon</a>'
-    )
-    cta_cierre = (
-        f'<a href="{amazon_url}" class="btn-amazon-cta">'
-        f'🔥 Ver Mejor Precio y Ofertas en Amazon</a>'
-    )
-
     fecha_hoy = datetime.now().strftime("%Y-%m-%d")
 
     # Ensamblar estructura MDX / Markdown optimizada para conversión (CRO)
+    # Nota: El botón CTA de Amazon es renderizado de forma única y centrada por BlogPost.astro al final del artículo
     bloques_markdown = []
     if ext_limpia == "mdx":
         bloques_markdown.append("import ProsCons from '../../components/ProsCons.astro';\n")
@@ -406,7 +392,6 @@ VEREDICTO:
         bloques_markdown.append(f"{intro}\n")
     if pros_cons_mdx:
         bloques_markdown.append(f"{pros_cons_mdx}\n")
-    bloques_markdown.append(f"{cta_above_the_fold}\n")
     if analisis:
         bloques_markdown.append(f"{analisis}\n")
     if pros_contras:
@@ -415,7 +400,6 @@ VEREDICTO:
         bloques_markdown.append(f"{guia_compra}\n")
     if veredicto:
         bloques_markdown.append(f"{veredicto}\n")
-    bloques_markdown.append(f"{cta_cierre}\n")
 
     cuerpo_final = "\n".join(bloques_markdown)
 

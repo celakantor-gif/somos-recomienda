@@ -16,8 +16,6 @@ heroImage: "/img/einhell-tc-cd-12-li-2b-kit-de-taladro-inalambrico.jpg"
 
 Si eres un aficionado al bricolaje o necesitas un taladro versátil para tus tareas del hogar, el Einhell TC-CD 12 Li 2B es la solución perfecta. Con su diseño inalámbrico y su potente batería, elimina las limitaciones de los cables, permitiéndote trabajar con comodidad y eficiencia en cualquier lugar.
 
-<a href="https://www.amazon.es/s?k=Einhell+TC-CD+12+Li+2B+Kit+de+Taladro+inal%C3%A1mbrico&tag=claramente03-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
-
 ### Especificaciones Clave  
 El Einhell TC-CD 12 Li 2B cuenta con un motor de 12 V que proporciona un rendimiento óptimo para perforar y atornillar en diversas superficies. Su batería de 1.5 Ah de litio garantiza una larga duración y un tiempo de carga rápido, permitiéndote retomar tu trabajo sin largas esperas.
 
@@ -42,6 +40,4 @@ Al elegir un taladro inalámbrico como el Einhell TC-CD 12 Li 2B, considera la p
 
 ## Veredicto Final  
 El Einhell TC-CD 12 Li 2B es ideal para aficionados al bricolaje y usuarios domésticos que buscan un taladro versátil y de calidad. Su combinación de potencia, ergonomía y autonomía lo convierte en una opción recomendable para aquellos que desean realizar tareas de perforación y atornillado con facilidad y eficiencia.
-
-<a href="https://www.amazon.es/s?k=Einhell+TC-CD+12+Li+2B+Kit+de+Taladro+inal%C3%A1mbrico&tag=claramente03-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
 

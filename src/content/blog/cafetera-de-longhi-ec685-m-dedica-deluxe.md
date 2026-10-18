@@ -16,8 +16,6 @@ heroImage: "/img/cafetera-de-longhi-ec685-m-dedica-deluxe.jpg"
 
 Si eres un amante del café que busca la calidad de una buena taza sin salir de casa, la Cafetera De'Longhi EC685.M Dedica Deluxe es la solución ideal. Con su diseño compacto y funcional, esta máquina te permitirá disfrutar de un espresso perfecto, resolviendo el dilema de las cafeteras de calidad a precios accesibles.
 
-<a href="https://www.amazon.es/s?k=Cafetera+De%27Longhi+EC685.M+Dedica+Deluxe&tag=claramente03-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
-
 ### Diseño Compacto y Elegante  
 La De'Longhi EC685.M Dedica Deluxe destaca por su diseño delgado y elegante, perfecto para cualquier cocina. Mide solo 14.9 cm de ancho, lo que la hace ideal para espacios reducidos.
 
@@ -45,6 +43,4 @@ Al elegir la Cafetera De'Longhi EC685.M Dedica Deluxe, considera factores como l
 
 ## Veredicto Final  
 La Cafetera De'Longhi EC685.M Dedica Deluxe es perfecta para los entusiastas del café que valoran la calidad y la funcionalidad en un diseño compacto. Si buscas una máquina que ofrezca café de calidad de cafetería sin ocupar demasiado espacio, esta es una opción altamente recomendable.
-
-<a href="https://www.amazon.es/s?k=Cafetera+De%27Longhi+EC685.M+Dedica+Deluxe&tag=claramente03-21" class="btn-amazon-cta">🔥 Ver Mejor Precio y Ofertas en Amazon</a>
 
