@@ -17,11 +17,14 @@ import re
 import csv
 import time
 import json
+import random
 import argparse
 import unicodedata
+import urllib.parse
 from datetime import datetime
-from typing import Dict, Set, List, Optional
+from typing import Dict, Set, List, Optional, Tuple
 import requests
+import bs4
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -30,7 +33,6 @@ except ImportError:
 from openai import OpenAI
 
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
-PIXABAY_API_KEY = os.getenv("PIXABAY_API_KEY")
 AMAZON_AFFILIATE_TAG = (
     os.getenv("AMAZON_AFFILIATE_TAG")
     or os.getenv("PUBLIC_AMAZON_AFFILIATE_TAG")
@@ -117,7 +119,7 @@ def guardar_memoria_imagenes(imagenes: Set[str]) -> None:
 
 
 # ==============================================================================
-# MOTOR VISUAL Y FALLBACK DE IMÁGENES (PIXABAY + FALLBACK LOCAL)
+# MOTOR VISUAL Y EXTRACTOR DE IMÁGENES OFICIALES DE AMAZON
 # ==============================================================================
 
 MAPA_FALLBACK_IMAGENES = {
@@ -138,6 +140,26 @@ MAPA_FALLBACK_IMAGENES = {
     "general": "/images/fallbacks/consejos-default.jpg",
 }
 
+USER_AGENTS_AMAZON = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0",
+]
+
+
+def obtener_headers_amazon() -> dict:
+    """Devuelve cabeceras HTTP de navegador reales para evitar bloqueos y captchas."""
+    return {
+        "User-Agent": random.choice(USER_AGENTS_AMAZON),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br",
+        "DNT": "1",
+        "Upgrade-Insecure-Requests": "1",
+    }
+
 
 def obtener_imagen_fallback(categoria: str) -> str:
     """Devuelve la ruta a la imagen local genérica predefinida por categoría."""
@@ -147,7 +169,7 @@ def obtener_imagen_fallback(categoria: str) -> str:
 
 def descargar_imagen(url: str, ruta_destino: str) -> None:
     """Descarga una imagen verificando cabeceras y tamaño mínimo seguro."""
-    r = requests.get(url, timeout=15, headers={"User-Agent": "Mozilla/5.0 (SomosRecomienda/2.0)"})
+    r = requests.get(url, timeout=15, headers={"User-Agent": random.choice(USER_AGENTS_AMAZON)})
     r.raise_for_status()
     if not r.headers.get("Content-Type", "").startswith("image/") and len(r.content) < 1024:
         raise ValueError("La respuesta recibida no es una imagen válida.")
@@ -156,76 +178,199 @@ def descargar_imagen(url: str, ruta_destino: str) -> None:
         f.write(r.content)
 
 
-def buscar_imagen_pixabay(query: str) -> List[dict]:
-    """Consulta la API de Pixabay buscando fotografías horizontales del producto."""
-    if not PIXABAY_API_KEY:
-        return []
-    if not query or not str(query).strip():
-        return []
+def limpiar_url_alta_resolucion_amazon(url_img: str) -> str:
+    """
+    Convierte cualquier miniatura o URL recortada de Amazon a su imagen original en máxima resolución.
+    Ejemplo: https://m.media-amazon.com/images/I/71bmqgnZQdL._AC_UL320_.jpg -> https://m.media-amazon.com/images/I/71bmqgnZQdL.jpg
+    """
+    if not url_img:
+        return ""
+    # Quitar identificadores de escala tipo ._AC_UL320_., ._SX300_., etc.
+    return re.sub(r"\._[A-Z0-9_,]+_\.", ".", url_img.strip())
 
+
+def extraer_imagen_desde_html_amazon(html: str) -> Optional[str]:
+    """Extrae la imagen principal de la página de producto de Amazon (landingImage o og:image)."""
+    if not html:
+        return None
     try:
-        url = "https://pixabay.com/api/"
-        params = {
-            "key": PIXABAY_API_KEY,
-            "q": str(query).strip(),
-            "image_type": "photo",
-            "orientation": "horizontal",
-            "safesearch": "true",
-            "per_page": 10,
-        }
-        r = requests.get(url, params=params, timeout=12)
+        soup = bs4.BeautifulSoup(html, "html.parser")
+    except Exception:
+        soup = None
+
+    if soup:
+        # 1. Imagen principal #landingImage o #imgBlkFront
+        landing = soup.find("img", id="landingImage") or soup.find("img", id="imgBlkFront")
+        if landing:
+            old_hires = landing.get("data-old-hires")
+            if old_hires:
+                return limpiar_url_alta_resolucion_amazon(old_hires)
+            
+            dyn = landing.get("data-a-dynamic-image")
+            if dyn:
+                try:
+                    d = json.loads(dyn)
+                    if d:
+                        mejor_url = sorted(d.items(), key=lambda x: x[1][0] * x[1][1], reverse=True)[0][0]
+                        return limpiar_url_alta_resolucion_amazon(mejor_url)
+                except Exception:
+                    pass
+
+            src = landing.get("src")
+            if src:
+                return limpiar_url_alta_resolucion_amazon(src)
+
+        # 2. Meta tag og:image
+        og = soup.find("meta", property="og:image")
+        if og and og.get("content"):
+            c = og.get("content").strip()
+            if "media-amazon.com/images/I/" in c:
+                return limpiar_url_alta_resolucion_amazon(c)
+
+    # 3. Expresiones regulares de seguridad
+    m_hires = re.search(r'data-old-hires=["\']([^"\']+)["\']', html)
+    if m_hires:
+        return limpiar_url_alta_resolucion_amazon(m_hires.group(1))
+
+    m_og = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']', html)
+    if m_og and "media-amazon.com/images/I/" in m_og.group(1):
+        return limpiar_url_alta_resolucion_amazon(m_og.group(1))
+
+    return None
+
+
+def extraer_imagen_y_asin_amazon(keyword: str, asin: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Extrae la imagen oficial y el ASIN del producto desde Amazon España:
+    1. Si hay un ASIN válido, consulta directamente https://www.amazon.es/dp/{asin}.
+    2. Si no hay ASIN o falla, busca en https://www.amazon.es/s?k={keyword} y extrae el producto top 1.
+    Retorna (url_imagen_alta_resolucion, asin_detectado).
+    """
+    asin_candidato = (asin or "").strip()
+
+    # Paso 1: Si hay ASIN directo, intentar página de producto
+    if asin_candidato and re.match(r"^[A-Z0-9]{10}$", asin_candidato):
+        dp_url = f"https://www.amazon.es/dp/{asin_candidato}"
+        try:
+            r = requests.get(dp_url, headers=obtener_headers_amazon(), timeout=12)
+            if r.status_code == 200:
+                img_url = extraer_imagen_desde_html_amazon(r.text)
+                if img_url:
+                    print(f"    [Amazon Extractor] Foto oficial obtenida desde DP ({asin_candidato}): {img_url}")
+                    return img_url, asin_candidato
+            elif r.status_code in (503, 429):
+                print(f"    [Amazon Extractor] Amazon respondió {r.status_code} (Anti-bot/Captcha) en {dp_url}")
+        except Exception as e:
+            print(f"    [Amazon Extractor] Error en DP {asin_candidato}: {e}")
+
+    # Paso 2: Búsqueda orgánica en Amazon para obtener el producto principal
+    search_url = f"https://www.amazon.es/s?k={urllib.parse.quote_plus(keyword)}"
+    try:
+        r = requests.get(search_url, headers=obtener_headers_amazon(), timeout=12)
         if r.status_code == 200:
-            hits = r.json().get("hits", [])
-            return [h for h in hits if h.get("largeImageURL") or h.get("webformatURL")]
+            soup = bs4.BeautifulSoup(r.text, "html.parser")
+            tarjetas = soup.select("div[data-asin]")
+            for tarjeta in tarjetas:
+                card_asin = tarjeta.get("data-asin", "").strip()
+                if card_asin and len(card_asin) == 10 and not card_asin.startswith("0"):
+                    img_tag = tarjeta.select_one("img.s-image")
+                    if img_tag and img_tag.get("src"):
+                        src_thumb = img_tag.get("src").strip()
+                        if "media-amazon.com/images/I/" in src_thumb:
+                            img_hd = limpiar_url_alta_resolucion_amazon(src_thumb)
+                            print(f"    [Amazon Extractor] Foto oficial obtenida desde búsqueda (ASIN: {card_asin}): {img_hd}")
+                            return img_hd, card_asin
+
+            # Fallback en lista de imágenes de búsqueda
+            for img_tag in soup.select("img.s-image"):
+                src_thumb = img_tag.get("src", "").strip()
+                if "media-amazon.com/images/I/" in src_thumb:
+                    img_hd = limpiar_url_alta_resolucion_amazon(src_thumb)
+                    print(f"    [Amazon Extractor] Foto obtenida desde búsqueda directa: {img_hd}")
+                    return img_hd, asin_candidato or None
+
+        elif r.status_code in (503, 429):
+            print(f"    [Amazon Extractor] Amazon respondió {r.status_code} (Anti-bot en búsqueda).")
     except Exception as e:
-        print(f"    [Aviso Pixabay] No se pudo obtener imagen desde Pixabay: {e}")
-    return []
+        print(f"    [Amazon Extractor] Error en búsqueda de Amazon: {e}")
+
+    return None, asin_candidato or None
+
+
+def generar_imagen_fallback_openai(keyword: str, categoria: str, ruta_destino: str) -> Optional[str]:
+    """
+    Fallback seguro: si Amazon bloquea la petición (HTTP 503/Captcha), genera una imagen fotorrealista
+    y genérica SIN MARCA ni logotipos con OpenAI (DALL-E 3) sobre fondo neutro de estudio.
+    """
+    try:
+        client = get_openai_client()
+        prompt_dalle = (
+            f"Professional commercial studio product photography of a modern generic {keyword}, "
+            f"neutral light grey background, soft studio lighting, sharp focus, 8k resolution, photorealistic, "
+            f"NO text, NO visible brands, NO logos, centered composition."
+        )
+        print(f"    [Fallback DALL-E] Generando imagen de producto sin marca con OpenAI para '{keyword}'...")
+        response = client.images.generate(
+            model="dall-e-3",
+            prompt=prompt_dalle,
+            size="1024x1024",
+            quality="standard",
+            n=1,
+        )
+        if response.data and response.data[0].url:
+            descargar_imagen(response.data[0].url, ruta_destino)
+            print(f"    [Fallback DALL-E OK] Imagen generada guardada en: {ruta_destino}")
+            return ruta_destino
+    except Exception as e:
+        print(f"    [Aviso Fallback DALL-E] No se pudo generar imagen con OpenAI: {e}")
+    return None
 
 
 def resolver_hero_image(
     keyword: str,
-    termino_imagen_en: str,
     categoria: str,
     slug: str,
-    memoria_imagenes: Set[str],
-) -> str:
+    asin_amazon: Optional[str] = None,
+    memoria_imagenes: Optional[Set[str]] = None,
+) -> Tuple[str, Optional[str]]:
     """
-    Resuelve y descarga la imagen destacada para el producto:
-    1. Búsqueda en Pixabay con 'termino_imagen_en' limpio (sin números de modelo).
-    2. Fallback local predefinido por categoría si Pixabay falla o no devuelve resultados.
+    Resuelve y descarga la imagen oficial del producto de Amazon:
+    1. Extrae la foto de producto directamente de Amazon España (vía ASIN o búsqueda orgánica con headers reales).
+    2. Descarga la imagen en alta resolución a 'public/img/{slug}.jpg'.
+    3. Si Amazon bloquea con 503/Captcha, fallback a OpenAI DALL-E 3 (fotografía de estudio sin marca).
+    4. Fallback final local de categoría si todo lo anterior falla.
+    Retorna (ruta_publica_imagen, asin_detectado).
     """
     os.makedirs(PUBLIC_IMG_DIR, exist_ok=True)
-    
-    # Limpiar alfanuméricos de modelo (ej: 's500', '18v', 'hx9911', 'dhp482z') para evitar falsos positivos como coches o camiones
-    termino_limpio = re.sub(r'\b[A-Za-z]*\d+[A-Za-z0-9]*\b', '', termino_imagen_en).strip()
-    termino_limpio = re.sub(r'\s+', ' ', termino_limpio)
-    
-    queries = [q for q in [termino_limpio, termino_imagen_en] if q and len(q) >= 3]
+    nombre_archivo = f"{slug}.jpg"
+    ruta_disco = os.path.join(PUBLIC_IMG_DIR, nombre_archivo)
+    ruta_publica = f"/img/{nombre_archivo}"
 
-    for q in queries:
-        hits = buscar_imagen_pixabay(q)
-        for h in hits:
-            img_url = h.get("largeImageURL") or h.get("webformatURL")
-            if not img_url or img_url in memoria_imagenes:
-                continue
-
-            nombre_archivo = f"{slug}.jpg"
-            ruta_disco = os.path.join(PUBLIC_IMG_DIR, nombre_archivo)
-            ruta_publica = f"/img/{nombre_archivo}"
-
-            try:
-                descargar_imagen(img_url, ruta_disco)
-                memoria_imagenes.add(img_url)
+    # 1. Extracción directa desde Amazon (Objetivo Principal de Negocio)
+    img_url_amazon, asin_detectado = extraer_imagen_y_asin_amazon(keyword=keyword, asin=asin_amazon)
+    if img_url_amazon:
+        try:
+            descargar_imagen(img_url_amazon, ruta_disco)
+            if memoria_imagenes is not None:
+                memoria_imagenes.add(img_url_amazon)
                 memoria_imagenes.add(ruta_publica)
-                print(f"    [Imagen OK] Descargada desde Pixabay: {ruta_publica} (Query: '{q}')")
-                return ruta_publica
-            except Exception as e:
-                print(f"    [Aviso Imagen] Error descargando {img_url}: {e}")
-                continue
+            print(f"    [Amazon OK] Imagen oficial del producto descargada con éxito: {ruta_publica}")
+            return ruta_publica, asin_detectado
+        except Exception as e:
+            print(f"    [Aviso Descarga Amazon] Error descargando imagen de Amazon ({img_url_amazon}): {e}")
 
+    # 2. Fallback Seguro: Generación con OpenAI DALL-E 3 (Sin marcas erróneas)
+    print(f"    [Fallback Activo] Amazon no devolvió imagen. Intentando generar con OpenAI...")
+    img_dalle = generar_imagen_fallback_openai(keyword=keyword, categoria=categoria, ruta_destino=ruta_disco)
+    if img_dalle and os.path.exists(ruta_disco):
+        if memoria_imagenes is not None:
+            memoria_imagenes.add(ruta_publica)
+        return ruta_publica, asin_detectado
+
+    # 3. Fallback Final: Imagen genérica local por categoría
     fallback = obtener_imagen_fallback(categoria)
-    print(f"    [Imagen Fallback] Asignada imagen local de categoría: {fallback}")
-    return fallback
+    print(f"    [Imagen Fallback Local] Asignada imagen local de categoría: {fallback}")
+    return fallback, asin_detectado
 
 
 # ==============================================================================
@@ -279,7 +424,6 @@ Responde EXACTAMENTE con la siguiente estructura y etiquetas de campos (sin ning
 
 TITULO: [Titular H1 transaccional de alta conversión, ej: 'Mejor {keyword.title()} en {anio_actual}: Análisis y Opiniones']
 DESCRIPCION: [Meta descripción SEO persuasiva para CTR en Google de 140 a 155 caracteres]
-TERMINO_IMAGEN: [2 a 3 palabras genéricas en inglés que describan el OBJETO o TIPO DE PRODUCTO para buscar fotografía en Pixabay (ej: 'electric shaver', 'cordless drill', 'running smartwatch', 'coffee maker'). NUNCA incluyas números de modelo, marcas ni códigos como S500, DHP, 18V ya que provocarían imágenes erróneas como coches o camiones.]
 INTRO:
 [Párrafo de introducción y enganche de aproximadamente 50 palabras abordando directamente el dolor, problema o necesidad inmediata del comprador]
 PROS_CONS_MDX:
@@ -318,7 +462,6 @@ VEREDICTO:
     # Parsear campos de la respuesta del LLM
     match_titulo = re.search(r"TITULO:\s*(.+)", raw_text, re.IGNORECASE)
     match_desc = re.search(r"DESCRIPCION:\s*(.+)", raw_text, re.IGNORECASE)
-    match_img_en = re.search(r"TERMINO_IMAGEN:\s*(.+)", raw_text, re.IGNORECASE)
     match_intro = re.search(r"INTRO:\s*([\s\S]*?)(?=PROS_CONS_MDX:|ANALISIS:|$)", raw_text, re.IGNORECASE)
     match_pros_cons_mdx = re.search(r"PROS_CONS_MDX:\s*(<ProsCons[\s\S]*?/>)", raw_text, re.IGNORECASE)
     match_analisis = re.search(r"ANALISIS:\s*([\s\S]*?)(?=PROS_CONTRAS:|$)", raw_text, re.IGNORECASE)
@@ -335,11 +478,6 @@ VEREDICTO:
         match_desc.group(1).strip().strip("\"'")
         if match_desc
         else f"Guía y análisis a fondo del mejor {keyword} en {anio_actual}. Descubre características, pros, contras y el mejor precio en Amazon."
-    )
-    termino_imagen_en = (
-        match_img_en.group(1).strip().strip("\"'[]")
-        if match_img_en
-        else keyword
     )
     intro = match_intro.group(1).strip() if match_intro else ""
     analisis = match_analisis.group(1).strip() if match_analisis else ""
@@ -382,14 +520,18 @@ VEREDICTO:
     if os.path.exists(ruta_articulo):
         print(f"    [Aviso Archivo] Ya existe '{nombre_archivo}'. Se actualizará con la nueva reseña.")
 
-    # Resolver imagen destacada
-    hero_image = resolver_hero_image(
+    # Resolver imagen destacada (Extractor Oficial de Amazon + Fallback OpenAI)
+    hero_image, asin_detectado = resolver_hero_image(
         keyword=keyword,
-        termino_imagen_en=termino_imagen_en,
         categoria=categoria,
         slug=slug_base,
+        asin_amazon=asin_amazon,
         memoria_imagenes=memoria_imagenes,
     )
+
+    # Si detectamos el ASIN oficial de Amazon y no venía en el CSV, lo sincronizamos
+    if asin_detectado and not asin_amazon:
+        asin_amazon = asin_detectado
 
     fecha_hoy = datetime.now().strftime("%Y-%m-%d")
 
