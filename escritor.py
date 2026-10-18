@@ -122,20 +122,27 @@ def guardar_memoria_imagenes(imagenes: Set[str]) -> None:
 
 MAPA_FALLBACK_IMAGENES = {
     "hogar y cocina": "/images/fallbacks/hogar-y-cocina-default.jpg",
+    "hogar-y-cocina": "/images/fallbacks/hogar-y-cocina-default.jpg",
     "informatica": "/images/fallbacks/informatica-default.jpg",
     "productos para mascotas": "/images/fallbacks/productos-para-mascotas-default.jpg",
+    "productos-para-mascotas": "/images/fallbacks/productos-para-mascotas-default.jpg",
     "deportes y aire libre": "/images/fallbacks/deportes-default.jpg",
+    "deportes-y-aire-libre": "/images/fallbacks/deportes-default.jpg",
     "bricolaje y herramientas": "/images/fallbacks/bricolaje-y-herramientas-default.jpg",
+    "bricolaje-y-herramientas": "/images/fallbacks/bricolaje-y-herramientas-default.jpg",
     "electronica": "/images/fallbacks/electronica-default.jpg",
     "salud y cuidado personal": "/images/fallbacks/salud-default.jpg",
+    "salud-y-cuidado-personal": "/images/fallbacks/salud-default.jpg",
+    "cuidado personal": "/images/fallbacks/salud-default.jpg",
+    "cuidado-personal": "/images/fallbacks/salud-default.jpg",
     "general": "/images/fallbacks/consejos-default.jpg",
 }
 
 
 def obtener_imagen_fallback(categoria: str) -> str:
     """Devuelve la ruta a la imagen local genérica predefinida por categoría."""
-    cat_norm = normalizar_para_comparar(categoria)
-    return MAPA_FALLBACK_IMAGENES.get(cat_norm, "/images/fallbacks/consejos-default.jpg")
+    cat_norm = normalizar_para_comparar(categoria).replace("-", " ")
+    return MAPA_FALLBACK_IMAGENES.get(cat_norm, MAPA_FALLBACK_IMAGENES.get(categoria.lower(), "/images/fallbacks/consejos-default.jpg"))
 
 
 def descargar_imagen(url: str, ruta_destino: str) -> None:
@@ -184,11 +191,16 @@ def resolver_hero_image(
 ) -> str:
     """
     Resuelve y descarga la imagen destacada para el producto:
-    1. Búsqueda en Pixabay con 'termino_imagen_en' o 'keyword'.
+    1. Búsqueda en Pixabay con 'termino_imagen_en' limpio (sin números de modelo).
     2. Fallback local predefinido por categoría si Pixabay falla o no devuelve resultados.
     """
     os.makedirs(PUBLIC_IMG_DIR, exist_ok=True)
-    queries = [q for q in [termino_imagen_en, keyword] if q and q.strip()]
+    
+    # Limpiar alfanuméricos de modelo (ej: 's500', '18v', 'hx9911', 'dhp482z') para evitar falsos positivos como coches o camiones
+    termino_limpio = re.sub(r'\b[A-Za-z]*\d+[A-Za-z0-9]*\b', '', termino_imagen_en).strip()
+    termino_limpio = re.sub(r'\s+', ' ', termino_limpio)
+    
+    queries = [q for q in [termino_limpio, termino_imagen_en] if q and len(q) >= 3]
 
     for q in queries:
         hits = buscar_imagen_pixabay(q)
@@ -267,7 +279,7 @@ Responde EXACTAMENTE con la siguiente estructura y etiquetas de campos (sin ning
 
 TITULO: [Titular H1 transaccional de alta conversión, ej: 'Mejor {keyword.title()} en {anio_actual}: Análisis y Opiniones']
 DESCRIPCION: [Meta descripción SEO persuasiva para CTR en Google de 140 a 155 caracteres]
-TERMINO_IMAGEN: [2 a 3 palabras en inglés para buscar fotografía horizontal en Pixabay, ej: 'cordless drill']
+TERMINO_IMAGEN: [2 a 3 palabras genéricas en inglés que describan el OBJETO o TIPO DE PRODUCTO para buscar fotografía en Pixabay (ej: 'electric shaver', 'cordless drill', 'running smartwatch', 'coffee maker'). NUNCA incluyas números de modelo, marcas ni códigos como S500, DHP, 18V ya que provocarían imágenes erróneas como coches o camiones.]
 INTRO:
 [Párrafo de introducción y enganche de aproximadamente 50 palabras abordando directamente el dolor, problema o necesidad inmediata del comprador]
 PROS_CONS_MDX:

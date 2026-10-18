@@ -31,13 +31,19 @@ DEFAULT_CSV = "keywords_productos.csv"
 
 MAPA_FALLBACK_IMAGENES = {
     "hogar y cocina": "public/images/fallbacks/hogar-y-cocina-default.jpg",
+    "hogar-y-cocina": "public/images/fallbacks/hogar-y-cocina-default.jpg",
     "informatica": "public/images/fallbacks/informatica-default.jpg",
     "productos para mascotas": "public/images/fallbacks/productos-para-mascotas-default.jpg",
+    "productos-para-mascotas": "public/images/fallbacks/productos-para-mascotas-default.jpg",
     "deportes y aire libre": "public/images/fallbacks/deportes-default.jpg",
+    "deportes-y-aire-libre": "public/images/fallbacks/deportes-default.jpg",
     "bricolaje y herramientas": "public/images/fallbacks/bricolaje-y-herramientas-default.jpg",
+    "bricolaje-y-herramientas": "public/images/fallbacks/bricolaje-y-herramientas-default.jpg",
     "electronica": "public/images/fallbacks/electronica-default.jpg",
     "salud y cuidado personal": "public/images/fallbacks/salud-default.jpg",
+    "salud-y-cuidado-personal": "public/images/fallbacks/salud-default.jpg",
     "cuidado personal": "public/images/fallbacks/salud-default.jpg",
+    "cuidado-personal": "public/images/fallbacks/salud-default.jpg",
     "general": "public/images/fallbacks/consejos-default.jpg",
 }
 
@@ -146,36 +152,68 @@ def crear_gradiente_contraste(width: int, height: int) -> Image.Image:
 
 
 def resolver_imagen_origen(keyword: str, categoria: str, ruta_especifica: Optional[str] = None) -> Optional[str]:
-    """Localiza la mejor imagen existente en el proyecto para el producto."""
+    """
+    Localiza con precisión absoluta la imagen exacta del producto usada en su artículo.
+    1. Si se pasa ruta específica válida, la utiliza.
+    2. Lee el artículo correspondiente en src/content/blog/ y extrae la ruta del campo 'heroImage'.
+    3. Si no localiza el artículo, comprueba coincidencias directas en public/img por slug.
+    4. Si falla, usa la imagen fallback oficial de la categoría.
+    """
     if ruta_especifica and os.path.exists(ruta_especifica):
         return ruta_especifica
 
-    slug_2026 = slugify(f"mejor-{keyword}-2026")
-    slug_simple = slugify(keyword)
+    slug_producto = slugify(keyword)
+    anio_actual = 2026
 
-    candidatas = [
-        os.path.join("public", "img", f"{slug_2026}.jpg"),
-        os.path.join("public", "img", f"{slug_simple}.jpg"),
+    # 1. Buscar en los artículos de src/content/blog/ para sincronizar 100% con heroImage
+    blog_dir = os.path.join("src", "content", "blog")
+    if os.path.exists(blog_dir):
+        archivos_blog = [
+            os.path.join(blog_dir, f)
+            for f in os.listdir(blog_dir)
+            if f.endswith((".md", ".mdx")) and not f.startswith(".")
+        ]
+        # Ordenar por fecha de modificación (los más recientes primero)
+        archivos_blog.sort(key=os.path.getmtime, reverse=True)
+
+        for ruta_post in archivos_blog:
+            try:
+                with open(ruta_post, "r", encoding="utf-8") as fp:
+                    contenido = fp.read(2000)
+                    
+                    coincide = False
+                    if f'keyword: "{keyword}"' in contenido or f"keyword: '{keyword}'" in contenido:
+                        coincide = True
+                    elif slug_producto in ruta_post.lower():
+                        coincide = True
+                    
+                    if coincide:
+                        m = re.search(r'heroImage:\s*["\']([^"\']+)["\']', contenido)
+                        if m:
+                            hero_val = m.group(1).strip()
+                            ruta_local = os.path.join("public", hero_val.lstrip("/\\"))
+                            if os.path.exists(ruta_local):
+                                print(f"    [Pinterest Imagen] Coincidencia exacta con artículo '{os.path.basename(ruta_post)}': {ruta_local}")
+                                return ruta_local
+            except Exception:
+                pass
+
+    # 2. Candidatas directas por nombre de archivo en public/img
+    candidatas_directas = [
+        os.path.join("public", "img", f"mejor-{slug_producto}-{anio_actual}.jpg"),
+        os.path.join("public", "img", f"{slug_producto}.jpg"),
+        os.path.join("public", "img", f"mejor-{slug_producto}.jpg"),
     ]
-
-    for c in candidatas:
+    for c in candidatas_directas:
         if os.path.exists(c):
+            print(f"    [Pinterest Imagen] Archivo directo encontrado: {c}")
             return c
 
-    # Búsqueda parcial en public/img
-    public_img = os.path.join("public", "img")
-    if os.path.exists(public_img):
-        for fname in os.listdir(public_img):
-            if fname.lower().endswith((".jpg", ".png", ".jpeg", ".webp")):
-                base_name = os.path.splitext(fname)[0].lower()
-                partes = [p for p in slug_simple.split("-") if len(p) > 3]
-                if any(p in base_name for p in partes[:2]):
-                    return os.path.join(public_img, fname)
-
-    # Fallbacks de categoría
-    cat_norm = normalizar_para_comparar(categoria)
-    fallback = MAPA_FALLBACK_IMAGENES.get(cat_norm, MAPA_FALLBACK_IMAGENES["general"])
+    # 3. Fallbacks de categoría (sin búsqueda parcial difusa que traiga imágenes erróneas)
+    cat_norm = normalizar_para_comparar(categoria).replace("-", " ")
+    fallback = MAPA_FALLBACK_IMAGENES.get(cat_norm, MAPA_FALLBACK_IMAGENES.get(categoria.lower(), MAPA_FALLBACK_IMAGENES["general"]))
     if os.path.exists(fallback):
+        print(f"    [Pinterest Imagen] Usando fallback de categoría: {fallback}")
         return fallback
 
     return None
@@ -202,11 +240,26 @@ def recortar_y_centrar(img: Image.Image, target_w: int = PIN_WIDTH, target_h: in
         return resized.crop((0, top, target_w, top + target_h))
 
 
+def calcular_color_texto_contraste(color_fondo_rgba: Tuple[int, ...]) -> Tuple[Tuple[int, int, int], Tuple[int, int, int]]:
+    """
+    Garantiza alto contraste entre el texto y el fondo de las etiquetas.
+    - Si el fondo es blanco o claro (luminancia > 140): texto gris oscuro/negro casi puro (17, 24, 39) y borde gris claro (209, 213, 219).
+    - Si el fondo es oscuro (luminancia <= 140): texto blanco puro (255, 255, 255) y borde turquesa (45, 212, 191).
+    """
+    r, g, b = color_fondo_rgba[:3]
+    luminancia = 0.299 * r + 0.587 * g + 0.114 * b
+    if luminancia > 140:
+        return (17, 24, 39), (209, 213, 219)
+    else:
+        return (255, 255, 255), (45, 212, 191)
+
+
 def crear_pin(
     keyword: str,
     categoria: str,
     ruta_imagen: Optional[str] = None,
     ruta_salida: Optional[str] = None,
+    estilo_pildoras: str = "blanco",
 ) -> str:
     """
     Crea un Pin de Pinterest de alta conversión (1000x1500) para un producto.
@@ -284,7 +337,7 @@ def crear_pin(
     draw.text((x_s + 2, y_cursor + 18), sub_text, font=font_sub, fill=(0, 0, 0, 200))
     draw.text((x_s, y_cursor + 16), sub_text, font=font_sub, fill=(251, 191, 36, 255))  # Dorado / Ámbar
 
-    # 6. Píldoras de Valor Centrales
+    # 6. Píldoras de Valor Centrales (Alto Contraste Garantizado)
     font_pills = obtener_fuente(22, bold=True)
     pills = ["Pros y Contras", "Opinión Real", "Mejor Precio"]
     pill_y = y_cursor + 72
@@ -301,17 +354,39 @@ def crear_pin(
     total_w_with_gaps = total_pills_w + (len(pills) - 1) * gap
     start_x = (PIN_WIDTH - total_w_with_gaps) // 2
 
+    # Configuración de fondo según estilo ('blanco' o 'oscuro')
+    if estilo_pildoras.lower() in ("blanco", "white", "claro", "light"):
+        fill_pills = (255, 255, 255, 235)  # Fondo blanco translúcido
+    else:
+        fill_pills = (15, 23, 42, 225)  # Fondo oscuro
+
+    # Color de texto y borde garantizando contraste estricto
+    color_texto_pills, outline_pills = calcular_color_texto_contraste(fill_pills)
+
+    # Renderizado sobre capa overlay para mezcla alfa suave y sin pérdida de calidad
+    overlay_pills = Image.new("RGBA", (PIN_WIDTH, PIN_HEIGHT), (0, 0, 0, 0))
+    draw_overlay = ImageDraw.Draw(overlay_pills)
+
     current_px = start_x
     for idx, p in enumerate(pills):
         pw = pill_widths[idx]
-        draw.rounded_rectangle(
+        draw_overlay.rounded_rectangle(
             [current_px, pill_y, current_px + pw, pill_y + 44],
             radius=14,
-            fill=(15, 23, 42, 210),
-            outline=(45, 212, 191, 180),
+            fill=fill_pills,
+            outline=outline_pills,
             width=2,
         )
-        draw.text((current_px + 16, pill_y + 9), p, font=font_pills, fill=(255, 255, 255))
+        current_px += pw + gap
+
+    lienzo = Image.alpha_composite(lienzo, overlay_pills)
+    draw = ImageDraw.Draw(lienzo)
+
+    # Dibujar texto con máximo contraste garantizado
+    current_px = start_x
+    for idx, p in enumerate(pills):
+        pw = pill_widths[idx]
+        draw.text((current_px + 16, pill_y + 9), p, font=font_pills, fill=color_texto_pills)
         current_px += pw + gap
 
     # 7. Call To Action (Botón inferior de alta conversión)
@@ -348,7 +423,7 @@ def crear_pin(
     return ruta_salida
 
 
-def procesar_ultimo_articulo(csv_path: str = DEFAULT_CSV) -> Optional[str]:
+def procesar_ultimo_articulo(csv_path: str = DEFAULT_CSV, estilo_pildoras: str = "blanco") -> Optional[str]:
     """Lee el CSV y genera el Pin para el último producto añadido."""
     if not os.path.exists(csv_path):
         print(f"[Error Pinterest] CSV '{csv_path}' no encontrado.")
@@ -370,7 +445,7 @@ def procesar_ultimo_articulo(csv_path: str = DEFAULT_CSV) -> Optional[str]:
     categoria = ultima_fila.get("categoria", "").strip() or "General"
 
     print(f"\n[Pinterest Motor] Creando Pin para: '{keyword}' ({categoria})...")
-    return crear_pin(keyword=keyword, categoria=categoria)
+    return crear_pin(keyword=keyword, categoria=categoria, estilo_pildoras=estilo_pildoras)
 
 
 def main():
@@ -379,6 +454,7 @@ def main():
     parser.add_argument("--categoria", type=str, default=None, help="Categoría del producto.")
     parser.add_argument("--imagen", type=str, default=None, help="Ruta a la imagen de origen.")
     parser.add_argument("--csv", type=str, default=DEFAULT_CSV, help="Ruta al CSV con el último producto.")
+    parser.add_argument("--estilo-pildoras", type=str, default="blanco", choices=["blanco", "oscuro", "white", "dark"], help="Estilo visual de las píldoras de valor ('blanco' con texto negro o 'oscuro' con texto blanco).")
     parser.add_argument("--all", action="store_true", help="Generar pines para todos los artículos en src/content/blog/")
 
     args = parser.parse_args()
@@ -397,16 +473,16 @@ def main():
                         elif line.startswith("category:"):
                             cat = line.split(":", 1)[1].strip().strip('"\'')
                 if kw:
-                    crear_pin(keyword=kw, categoria=cat)
+                    crear_pin(keyword=kw, categoria=cat, estilo_pildoras=args.estilo_pildoras)
             except Exception as e:
                 print(f"Error procesando {f}: {e}")
         return
 
     if args.keyword:
         cat = args.categoria or "General"
-        crear_pin(keyword=args.keyword, categoria=cat, ruta_imagen=args.imagen)
+        crear_pin(keyword=args.keyword, categoria=cat, ruta_imagen=args.imagen, estilo_pildoras=args.estilo_pildoras)
     else:
-        procesar_ultimo_articulo(csv_path=args.csv)
+        procesar_ultimo_articulo(csv_path=args.csv, estilo_pildoras=args.estilo_pildoras)
 
 
 if __name__ == "__main__":
