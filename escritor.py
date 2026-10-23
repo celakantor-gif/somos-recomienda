@@ -427,7 +427,7 @@ DESCRIPCION: [Meta descripción SEO persuasiva para CTR en Google de 140 a 155 c
 INTRO:
 [Párrafo de introducción y enganche de aproximadamente 50 palabras abordando directamente el dolor, problema o necesidad inmediata del comprador]
 PROS_CONS_MDX:
-<ProsCons pros={["[Ventaja breve 1]", "[Ventaja breve 2]", "[Ventaja breve 3]"]} cons={["[Desventaja breve 1]", "[Desventaja breve 2]"]} />
+<ProsCons pros={["Ventaja breve 1", "Ventaja breve 2", "Ventaja breve 3"]} cons={["Desventaja breve 1", "Desventaja breve 2"]} />
 ANALISIS:
 [Análisis exhaustivo con subtítulos explicando características clave, materiales, funcionamiento, ergonomía y experiencia de usuario]
 PROS_CONTRAS:
@@ -504,12 +504,17 @@ VEREDICTO:
         else:
             pros_cons_mdx = '<ProsCons pros={["Gran calidad de construcción", "Excelente relación calidad-precio"]} cons={["Inversión inicial algo elevada"]} />'
 
+    # Sanitizar corchetes dobles accidentales en JSX (ej. ']]}' -> ']}') para evitar fallos en astro build
+    pros_cons_mdx = re.sub(r"\]\s*\]\s*\}", "]}", pros_cons_mdx)
+
     # Respaldo si el LLM no separó con etiquetas
     if not intro and not analisis:
         cuerpo_limpio = re.sub(r"^---[\s\S]*?---\s*", "", raw_text)
         cuerpo_limpio = re.sub(r"^TITULO:.*\n+", "", cuerpo_limpio, flags=re.IGNORECASE)
-        cuerpo_limpio = re.sub(r"^DESCRIPCION:.*\n+", "", cuerpo_limpio, flags=re.IGNORECASE)
-        analisis = cuerpo_limpio
+        cuerpo_limpio = re.sub(r"^DESCRIPCI[OÓ]N:.*\n+", "", cuerpo_limpio, flags=re.IGNORECASE | re.MULTILINE)
+        cuerpo_limpio = re.sub(r"^#\s+.+\n+", "", cuerpo_limpio, flags=re.MULTILINE)
+        cuerpo_limpio = re.sub(r"<ProsCons[\s\S]*?/>\s*", "", cuerpo_limpio)
+        analisis = cuerpo_limpio.strip()
 
     # Construir slug y comprobar duplicados
     slug_base = slugify(f"mejor-{keyword}-{anio_actual}" if len(keyword) < 40 else keyword)
