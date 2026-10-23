@@ -655,27 +655,50 @@ VEREDICTO:
     guia_compra = match_guia.group(1).strip() if match_guia else ""
     veredicto = match_veredicto.group(1).strip() if match_veredicto else ""
 
-    # Extraer o construir componente MDX ProsCons
-    pros_cons_mdx = match_pros_cons_mdx.group(1).strip() if match_pros_cons_mdx else ""
-    if not pros_cons_mdx:
+    # Extraer o construir componente MDX ProsCons de forma 100% determinista con json.dumps
+    raw_pros_cons = match_pros_cons_mdx.group(1).strip() if match_pros_cons_mdx else ""
+    if not raw_pros_cons:
         m = re.search(r"(<ProsCons\s+[\s\S]*?/>)", raw_text)
         if m:
-            pros_cons_mdx = m.group(1).strip()
-        elif pros_contras:
-            # Fallback seguro: extraer puntos de pros_contras
-            partes = pros_contras.split("### Aspectos")
-            ventajas = re.findall(r"-\s*(.+)", partes[0]) if len(partes) > 0 else []
-            aspectos = re.findall(r"-\s*(.+)", partes[1]) if len(partes) > 1 else []
-            pros_list = [v.strip().replace('"', '\\"') for v in ventajas[:3]] or ["Excelente rendimiento", "Gran durabilidad", "Fácil de usar"]
-            cons_list = [a.strip().replace('"', '\\"') for a in aspectos[:2]] or ["Precio elevado", "Disponibilidad limitada"]
-            p_json = json.dumps(pros_list, ensure_ascii=False)
-            c_json = json.dumps(cons_list, ensure_ascii=False)
-            pros_cons_mdx = f'<ProsCons pros={{{p_json}}} cons={{{c_json}}} />'
-        else:
-            pros_cons_mdx = '<ProsCons pros={["Gran calidad de construcción", "Excelente relación calidad-precio"]} cons={["Inversión inicial algo elevada"]} />'
+            raw_pros_cons = m.group(1).strip()
 
-    # Sanitizar corchetes dobles accidentales en JSX (ej. ']]}' -> ']}') para evitar fallos en astro build
-    pros_cons_mdx = re.sub(r"\]\s*\]\s*\}", "]}", pros_cons_mdx)
+    pros_list: List[str] = []
+    cons_list: List[str] = []
+
+    if raw_pros_cons:
+        m_p = re.search(r"pros\s*=\s*\{?\s*\[([\s\S]*?)\]\s*\}?(?=\s+cons|\s*/>)", raw_pros_cons)
+        m_c = re.search(r"cons\s*=\s*\{?\s*\[([\s\S]*?)\]\s*\}?(?=\s*/>|\s+pros)", raw_pros_cons)
+        if m_p:
+            pros_list = [
+                s.strip()
+                for s in re.findall(r"""['"]([^'"]+)['"]""", m_p.group(1))
+                if s.strip()
+            ]
+        if m_c:
+            cons_list = [
+                s.strip()
+                for s in re.findall(r"""['"]([^'"]+)['"]""", m_c.group(1))
+                if s.strip()
+            ]
+
+    if (not pros_list or not cons_list) and pros_contras:
+        partes = pros_contras.split("### Aspectos")
+        ventajas = re.findall(r"-\s*(.+)", partes[0]) if len(partes) > 0 else []
+        aspectos = re.findall(r"-\s*(.+)", partes[1]) if len(partes) > 1 else []
+        if not pros_list:
+            pros_list = [v.strip() for v in ventajas[:3] if v.strip()]
+        if not cons_list:
+            cons_list = [a.strip() for a in aspectos[:2] if a.strip()]
+
+    if not pros_list:
+        pros_list = ["Gran calidad de construcción", "Excelente relación calidad-precio", "Fácil de usar"]
+    if not cons_list:
+        cons_list = ["Disponibilidad sujeta a stock", "Inversión inicial media"]
+
+    # Limpiar caracteres peligrosos dentro de los ítems y serializar con JSON válido dentro de llaves JSX {...}
+    pros_clean = [re.sub(r"[<>\{\}]", "", p).strip() for p in pros_list[:4]]
+    cons_clean = [re.sub(r"[<>\{\}]", "", c).strip() for c in cons_list[:3]]
+    pros_cons_mdx = f"<ProsCons pros={{{json.dumps(pros_clean, ensure_ascii=False)}}} cons={{{json.dumps(cons_clean, ensure_ascii=False)}}} />"
 
     # Respaldo si el LLM no separó con etiquetas
     if not intro and not analisis:
@@ -685,6 +708,27 @@ VEREDICTO:
         cuerpo_limpio = re.sub(r"^#\s+.+\n+", "", cuerpo_limpio, flags=re.MULTILINE)
         cuerpo_limpio = re.sub(r"<ProsCons[\s\S]*?/>\s*", "", cuerpo_limpio)
         analisis = cuerpo_limpio.strip()
+
+    # Filtro Anti-Errores MDX: eliminar etiquetas HTML/JSX extrañas y signos '<', '>', '{', '}' sueltos en el texto
+    def sanitizar_bloque_mdx(bloque: str) -> str:
+        if not bloque:
+            return ""
+        # 1. Eliminar cualquier etiqueta <ProsCons ... /> residual
+        limpio = re.sub(r"<ProsCons[\s\S]*?/>", "", bloque)
+        # 2. Eliminar cualquier etiqueta HTML/JSX (<div...>, </p>, <br>, etc.)
+        limpio = re.sub(r"</?[a-zA-Z][^>]*>", "", limpio)
+        # 3. Escapar o eliminar signos '<', '>', '{', '}' sueltos que rompen el compilador MDX
+        limpio = limpio.replace("{", "(").replace("}", ")")
+        limpio = limpio.replace("<", "&lt;").replace(">", "&gt;")
+        return limpio.strip()
+
+    intro = sanitizar_bloque_mdx(intro)
+    analisis = sanitizar_bloque_mdx(analisis)
+    pros_contras = sanitizar_bloque_mdx(pros_contras)
+    guia_compra = sanitizar_bloque_mdx(guia_compra)
+    veredicto = sanitizar_bloque_mdx(veredicto)
+    titulo = re.sub(r'["<>\{\}]', "", titulo).strip()
+    descripcion = re.sub(r'["<>\{\}]', "", descripcion).strip()
 
     # Construir slug y comprobar duplicados
     slug_base = slugify(f"mejor-{keyword}-{anio_actual}" if len(keyword) < 40 else keyword)
