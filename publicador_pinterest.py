@@ -47,7 +47,7 @@ def _limpiar_secreto(valor: Optional[str]) -> str:
 
 
 SITE_URL = (os.getenv("PUBLIC_SITE_URL") or "https://somos-recomienda.vercel.app").strip().rstrip("/")
-PINTEREST_API_BASE = "https://api-sandbox.pinterest.com/v5"
+PINTEREST_API_BASE = "https://api.pinterest.com/v5"
 PINTEREST_TOKEN = _limpiar_secreto(os.getenv("PINTEREST_ACCESS_TOKEN"))
 PINTEREST_BOARD_ID = _limpiar_secreto(os.getenv("PINTEREST_BOARD_ID"))
 
