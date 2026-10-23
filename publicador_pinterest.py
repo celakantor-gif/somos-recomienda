@@ -47,6 +47,7 @@ def _limpiar_secreto(valor: Optional[str]) -> str:
 
 
 SITE_URL = (os.getenv("PUBLIC_SITE_URL") or "https://somos-recomienda.vercel.app").strip().rstrip("/")
+PINTEREST_API_BASE = "https://api-sandbox.pinterest.com/v5"
 PINTEREST_TOKEN = _limpiar_secreto(os.getenv("PINTEREST_ACCESS_TOKEN"))
 PINTEREST_BOARD_ID = _limpiar_secreto(os.getenv("PINTEREST_BOARD_ID"))
 
@@ -147,25 +148,48 @@ def obtener_datos_ultimo_articulo(csv_path: str = "keywords_productos.csv") -> D
     }
 
 
-def _resolver_board_id_automatico(auth_token: str) -> str:
-    """Si no se configuró PINTEREST_BOARD_ID, intenta obtener el primer tablero disponible en la cuenta."""
+def _resolver_board_id_sandbox(auth_token: str, preferred_board_id: str = "") -> str:
+    """
+    Obtiene o verifica el Board ID en https://api-sandbox.pinterest.com/v5/boards.
+    Si en el entorno Sandbox aún no existe ningún tablero, crea uno automáticamente.
+    """
     headers = {
         "Authorization": f"Bearer {auth_token}",
         "Content-Type": "application/json",
     }
-    for base_url in ("https://api.pinterest.com/v5", "https://api-sandbox.pinterest.com/v5"):
-        try:
-            r = requests.get(f"{base_url}/boards", headers=headers, params={"page_size": 10}, timeout=15)
-            if r.status_code == 200:
-                items = r.json().get("items", [])
-                if items:
-                    board_id = items[0].get("id", "")
-                    board_name = items[0].get("name", "Tablero")
-                    print(f"[Pinterest Auto-Board] Tablero detectado automáticamente: '{board_name}' (ID: {board_id})")
-                    return str(board_id)
-        except Exception:
-            pass
-    return ""
+    url_boards = f"{PINTEREST_API_BASE}/boards"
+    try:
+        r = requests.get(url_boards, headers=headers, params={"page_size": 25}, timeout=15)
+        if r.status_code == 200:
+            items = r.json().get("items", [])
+            if items:
+                ids_disponibles = {str(b.get("id", "")): b.get("name", "Tablero") for b in items}
+                if preferred_board_id and preferred_board_id in ids_disponibles:
+                    return preferred_board_id
+                primer_id = str(items[0].get("id", ""))
+                primer_nombre = items[0].get("name", "Tablero")
+                print(f"[Pinterest Sandbox Board] Usando tablero de Sandbox: '{primer_nombre}' (ID: {primer_id})")
+                return primer_id
+            else:
+                # Si la cuenta en Sandbox no tiene tableros, creamos uno automáticamente
+                print("[Pinterest Sandbox Board] No había tableros en Sandbox. Creando tablero 'Somos Recomienda'...")
+                r_create = requests.post(
+                    url_boards,
+                    headers=headers,
+                    json={
+                        "name": "Somos Recomienda - Análisis y Ofertas",
+                        "description": "Las mejores guías de compra, comparativas y análisis de productos en Amazon España.",
+                        "privacy": "PUBLIC",
+                    },
+                    timeout=15,
+                )
+                if r_create.status_code in (200, 201):
+                    nuevo_id = str(r_create.json().get("id", ""))
+                    print(f"[Pinterest Sandbox Board] ¡Tablero creado con éxito en Sandbox! ID: {nuevo_id}")
+                    return nuevo_id
+    except Exception as e:
+        print(f"[Aviso Sandbox Board] Error consultando tableros en Sandbox: {e}")
+    return preferred_board_id
 
 
 def publicar_pin(
@@ -192,11 +216,11 @@ def publicar_pin(
 
     print(f"[Pinterest Auth] Token cargado correctamente (longitud: {len(auth_token)} caracteres, prefijo: '{auth_token[:8]}...')")
 
-    if not target_board_id:
-        target_board_id = _resolver_board_id_automatico(auth_token)
+    # Verificar/obtener el tablero válido en el entorno Sandbox (creándolo si no existe)
+    target_board_id = _resolver_board_id_sandbox(auth_token, preferred_board_id=target_board_id)
 
     if not target_board_id:
-        print("\n[AVISO PINTEREST] Falta configurar PINTEREST_BOARD_ID o no se pudo obtener automáticamente.")
+        print("\n[AVISO PINTEREST] Falta configurar PINTEREST_BOARD_ID o no se pudo obtener automáticamente en Sandbox.")
         print("Para solucionarlo:")
         print("1. Ejecuta 'python obtener_tableros.py'")
         print("2. Copia el 'BOARD ID' del tablero donde desees publicar.")
@@ -267,46 +291,26 @@ def publicar_pin(
     print(f"• URL Imagen en Vercel: {url_imagen_pin}")
     print("-" * 70)
 
-    endpoints = [
-        "https://api.pinterest.com/v5/pins",
-        "https://api-sandbox.pinterest.com/v5/pins",
-    ]
+    url_api = f"{PINTEREST_API_BASE}/pins"
 
     try:
-        r_principal = None
-        for idx_ep, url_api in enumerate(endpoints):
-            try:
-                resp = requests.post(url_api, json=payload, headers=headers, timeout=25)
-                if resp.status_code == 400 and media_source_b64 is not None:
-                    print(f"[Aviso API Pinterest] Reintentando envío mediante image_url en {url_api}...")
-                    payload_url = dict(payload, media_source=media_source_url)
-                    resp = requests.post(url_api, json=payload_url, headers=headers, timeout=25)
-
-                if idx_ep == 0 or resp.status_code in (200, 201):
-                    r_principal = resp
-
-                if resp.status_code in (200, 201):
-                    break
-                else:
-                    print(f"[Diagnóstico Pinterest] Endpoint '{url_api}' devolvió HTTP {resp.status_code}: {resp.text[:300]}")
-            except requests.RequestException as req_err:
-                print(f"[ERROR DE RED PINTEREST] Falló la conexión con {url_api}: {req_err}")
-
-        r = r_principal
-        if r is None:
-            print("[ERROR CRÍTICO PINTEREST] No se obtuvo respuesta de ningún endpoint de Pinterest.")
-            return {"error": "network_error"}
+        r = requests.post(url_api, json=payload, headers=headers, timeout=25)
+        if r.status_code == 400 and media_source_b64 is not None:
+            print(f"[Aviso API Pinterest] Reintentando envío mediante image_url en {url_api}...")
+            payload_url = dict(payload, media_source=media_source_url)
+            r = requests.post(url_api, json=payload_url, headers=headers, timeout=25)
 
         if r.status_code in (200, 201):
             pin_data = r.json()
             pin_id = pin_data.get("id")
-            print(f"\n[ÉXITO] ¡Pin publicado correctamente en Pinterest!")
+            print(f"\n[ÉXITO] ¡Pin publicado correctamente en Pinterest Sandbox!")
+            print(f"• Endpoint: {url_api}")
             print(f"• Pin ID: {pin_id}")
             print(f"• Enlace directo al Pin: https://www.pinterest.com/pin/{pin_id}/")
             print("=" * 70 + "\n")
             return pin_data
         else:
-            print(f"\n[ERROR API PINTEREST - HTTP {r.status_code}] Pinterest rechazó la publicación:")
+            print(f"\n[ERROR API PINTEREST - HTTP {r.status_code}] Pinterest Sandbox rechazó la publicación ({url_api}):")
             try:
                 err_json = r.json()
                 print("Response JSON exacto de Pinterest:")
@@ -316,7 +320,7 @@ def publicar_pin(
                 print(f"Respuesta cruda (No-JSON): {r.text}")
                 return {"status_code": r.status_code, "raw_response": r.text}
     except Exception as e:
-        print(f"\n[EXCEPCIÓN EN PUBLICADOR PINTEREST] Error inesperado al llamar a la API: {e}")
+        print(f"\n[EXCEPCIÓN EN PUBLICADOR PINTEREST] Error inesperado al llamar a {url_api}: {e}")
         return {"error": str(e)}
 
 

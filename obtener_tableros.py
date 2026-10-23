@@ -40,7 +40,7 @@ def listar_tableros():
         print("PINTEREST_ACCESS_TOKEN=\"pina_...\"\n")
         return
 
-    url = "https://api.pinterest.com/v5/boards"
+    url = "https://api-sandbox.pinterest.com/v5/boards"
     headers = {
         "Authorization": f"Bearer {TOKEN.strip()}",
         "Content-Type": "application/json"
