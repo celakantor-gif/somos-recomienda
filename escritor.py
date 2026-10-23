@@ -18,6 +18,7 @@ import csv
 import time
 import json
 import random
+import shutil
 import argparse
 import unicodedata
 import urllib.parse
@@ -25,6 +26,7 @@ from datetime import datetime
 from typing import Dict, Set, List, Optional, Tuple
 import requests
 import bs4
+from PIL import Image, ImageStat
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -33,6 +35,7 @@ except ImportError:
 from openai import OpenAI
 
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
+PIXABAY_API_KEY = os.getenv("PIXABAY_API_KEY")
 AMAZON_AFFILIATE_TAG = (
     os.getenv("AMAZON_AFFILIATE_TAG")
     or os.getenv("PUBLIC_AMAZON_AFFILIATE_TAG")
@@ -167,15 +170,59 @@ def obtener_imagen_fallback(categoria: str) -> str:
     return MAPA_FALLBACK_IMAGENES.get(cat_norm, MAPA_FALLBACK_IMAGENES.get(categoria.lower(), "/images/fallbacks/consejos-default.jpg"))
 
 
+def validar_imagen_visual(ruta_imagen: str, min_bytes: int = 5120, min_width: int = 250, min_height: int = 250) -> bool:
+    """
+    Filtro de Validación Visual con Pillow (PIL):
+    - Descarta imágenes con peso menor a 5KB (5120 bytes).
+    - Descarta imágenes minúsculas o píxeles de tracking (ej. 1x1 px, < 250x250 px).
+    - Descarta imágenes corruptas o fondos planos vacíos (varianza cromática nula en el centro).
+    """
+    if not ruta_imagen or not os.path.exists(ruta_imagen):
+        return False
+    try:
+        peso = os.path.getsize(ruta_imagen)
+        if peso < min_bytes:
+            print(f"    [Filtro Visual] Imagen descartada por tamaño insuficiente ({peso} bytes < {min_bytes} bytes): {ruta_imagen}")
+            return False
+
+        with Image.open(ruta_imagen) as im:
+            im.verify()
+
+        with Image.open(ruta_imagen) as im:
+            w, h = im.size
+            if w < min_width or h < min_height:
+                print(f"    [Filtro Visual] Imagen descartada por dimensiones minúsculas ({w}x{h}px): {ruta_imagen}")
+                return False
+
+            # Verificar que el área central no sea un gradiente o color plano vacío
+            centro = im.crop((w // 4, h // 4, 3 * w // 4, 3 * h // 4)).convert("RGB")
+            stddev = max(ImageStat.Stat(centro).stddev)
+            if stddev < 8.0:
+                print(f"    [Filtro Visual] Imagen descartada por fondo plano/vacío (stddev={stddev:.2f}): {ruta_imagen}")
+                return False
+
+        return True
+    except Exception as e:
+        print(f"    [Filtro Visual] Imagen corrupta o ilegible ({e}): {ruta_imagen}")
+        return False
+
+
 def descargar_imagen(url: str, ruta_destino: str) -> None:
-    """Descarga una imagen verificando cabeceras y tamaño mínimo seguro."""
+    """Descarga una imagen y aplica el Filtro de Validación Visual con Pillow (mínimo 5KB y dimensiones reales)."""
     r = requests.get(url, timeout=15, headers={"User-Agent": random.choice(USER_AGENTS_AMAZON)})
     r.raise_for_status()
-    if not r.headers.get("Content-Type", "").startswith("image/") and len(r.content) < 1024:
-        raise ValueError("La respuesta recibida no es una imagen válida.")
+    if len(r.content) < 5120:
+        raise ValueError(f"La imagen descargada pesa menos de 5KB ({len(r.content)} bytes).")
     os.makedirs(os.path.dirname(ruta_destino), exist_ok=True)
     with open(ruta_destino, "wb") as f:
         f.write(r.content)
+
+    if not validar_imagen_visual(ruta_destino):
+        try:
+            os.remove(ruta_destino)
+        except OSError:
+            pass
+        raise ValueError("La imagen descargada no superó el filtro de validación visual (dimensiones minúsculas o corrupta).")
 
 
 def limpiar_url_alta_resolucion_amazon(url_img: str) -> str:
@@ -297,10 +344,80 @@ def extraer_imagen_y_asin_amazon(keyword: str, asin: Optional[str] = None) -> Tu
     return None, asin_candidato or None
 
 
+MAPA_QUERIES_PIXABAY_CATEGORIA = {
+    "bricolaje-y-herramientas": ["power drill tool", "cordless drill workshop", "power tools workbench"],
+    "bricolaje y herramientas": ["power drill tool", "cordless drill workshop", "power tools workbench"],
+    "informatica": ["laptop computer desk", "computer mouse keyboard", "modern workspace laptop"],
+    "productos-para-mascotas": ["dog pet bed", "happy dog indoor", "cat dog accessories"],
+    "productos para mascotas": ["dog pet bed", "happy dog indoor", "cat dog accessories"],
+    "hogar-y-cocina": ["modern kitchen appliance", "coffee maker kitchen", "cooking kitchenware"],
+    "hogar y cocina": ["modern kitchen appliance", "coffee maker kitchen", "cooking kitchenware"],
+    "deportes-y-aire-libre": ["outdoor camping gear", "fitness sports equipment", "hiking backpack trail"],
+    "deportes y aire libre": ["outdoor camping gear", "fitness sports equipment", "hiking backpack trail"],
+    "cuidado-personal": ["electric shaver grooming", "personal care bathroom", "beauty grooming device"],
+    "cuidado personal": ["electric shaver grooming", "personal care bathroom", "beauty grooming device"],
+    "salud-y-cuidado-personal": ["electric shaver grooming", "personal care bathroom", "beauty grooming device"],
+}
+
+
+def obtener_termino_ingles_pixabay(keyword: str, categoria: str) -> str:
+    """Usa OpenAI para traducir el tipo de producto a 2 palabras genéricas en inglés (sin marcas ni modelos)."""
+    try:
+        client = get_openai_client()
+        r = client.chat.completions.create(
+            model="gpt-4o-mini",
+            temperature=0.2,
+            timeout=10.0,
+            messages=[
+                {
+                    "role": "user",
+                    "content": (
+                        f"Convierte el producto '{keyword}' (categoría '{categoria}') en un término genérico de búsqueda "
+                        f"fotográfica en inglés de 2 palabras (SOLO el objeto físico sin marcas ni números de modelo, "
+                        f"ej: 'cordless drill', 'air fryer', 'wireless mouse', 'dog bed', 'electric shaver', 'camping chair'). "
+                        f"Responde únicamente con esas 2 palabras en inglés."
+                    ),
+                }
+            ],
+        )
+        termino = re.sub(r"[^a-zA-Z\s]", "", r.choices[0].message.content.strip()).strip()
+        if len(termino) >= 3:
+            return " ".join(termino.split()[:3])
+    except Exception:
+        pass
+    # Limpiar números de modelo como fallback
+    limpio = re.sub(r"\b[A-Za-z]*\d+[A-Za-z0-9/-]*\b", "", keyword).strip()
+    return re.sub(r"\s+", " ", limpio)[:35]
+
+
+def buscar_imagen_pixabay(query: str) -> List[dict]:
+    """Consulta la API de Pixabay buscando fotografías horizontales de alta resolución."""
+    api_key = os.getenv("PIXABAY_API_KEY") or PIXABAY_API_KEY
+    if not api_key or not query or not str(query).strip():
+        return []
+    try:
+        url = "https://pixabay.com/api/"
+        params = {
+            "key": api_key.strip(),
+            "q": str(query).strip(),
+            "image_type": "photo",
+            "orientation": "horizontal",
+            "safesearch": "true",
+            "per_page": 15,
+        }
+        r = requests.get(url, params=params, timeout=12)
+        if r.status_code == 200:
+            hits = r.json().get("hits", [])
+            return [h for h in hits if h.get("largeImageURL") or h.get("webformatURL")]
+    except Exception as e:
+        print(f"    [Aviso Pixabay] Error consultando Pixabay para '{query}': {e}")
+    return []
+
+
 def generar_imagen_fallback_openai(keyword: str, categoria: str, ruta_destino: str) -> Optional[str]:
     """
-    Fallback seguro: si Amazon bloquea la petición (HTTP 503/Captcha), genera una imagen fotorrealista
-    y genérica SIN MARCA ni logotipos con OpenAI (DALL-E 3) sobre fondo neutro de estudio.
+    Fallback con OpenAI (DALL-E 3): genera una fotografía de estudio fotorrealista del producto
+    y la valida dimensionalmente con Pillow.
     """
     try:
         client = get_openai_client()
@@ -309,7 +426,7 @@ def generar_imagen_fallback_openai(keyword: str, categoria: str, ruta_destino: s
             f"neutral light grey background, soft studio lighting, sharp focus, 8k resolution, photorealistic, "
             f"NO text, NO visible brands, NO logos, centered composition."
         )
-        print(f"    [Fallback DALL-E] Generando imagen de producto sin marca con OpenAI para '{keyword}'...")
+        print(f"    [Fallback DALL-E] Generando imagen de producto con OpenAI para '{keyword}'...")
         response = client.images.generate(
             model="dall-e-3",
             prompt=prompt_dalle,
@@ -319,10 +436,26 @@ def generar_imagen_fallback_openai(keyword: str, categoria: str, ruta_destino: s
         )
         if response.data and response.data[0].url:
             descargar_imagen(response.data[0].url, ruta_destino)
-            print(f"    [Fallback DALL-E OK] Imagen generada guardada en: {ruta_destino}")
-            return ruta_destino
+            if validar_imagen_visual(ruta_destino):
+                print(f"    [Fallback DALL-E OK] Imagen válida guardada en: {ruta_destino}")
+                return ruta_destino
     except Exception as e:
         print(f"    [Aviso Fallback DALL-E] No se pudo generar imagen con OpenAI: {e}")
+    return None
+
+
+def generar_imagen_fallback_pollinations(termino_en: str, ruta_destino: str) -> Optional[str]:
+    """Fallback generativo adicional libre de API key mediante Pollinations AI validado con Pillow."""
+    try:
+        prompt_q = urllib.parse.quote(f"professional studio product photo of {termino_en}, commercial lighting, high resolution, realistic")
+        url_poll = f"https://image.pollinations.ai/prompt/{prompt_q}?width=1024&height=768&nologo=true&seed={random.randint(1, 99999)}"
+        print(f"    [Fallback Pollinations] Solicitando imagen generativa para '{termino_en}'...")
+        descargar_imagen(url_poll, ruta_destino)
+        if validar_imagen_visual(ruta_destino):
+            print(f"    [Fallback Pollinations OK] Imagen válida guardada en: {ruta_destino}")
+            return ruta_destino
+    except Exception as e:
+        print(f"    [Aviso Pollinations] Falló descarga generativa: {e}")
     return None
 
 
@@ -334,43 +467,80 @@ def resolver_hero_image(
     memoria_imagenes: Optional[Set[str]] = None,
 ) -> Tuple[str, Optional[str]]:
     """
-    Resuelve y descarga la imagen oficial del producto de Amazon:
-    1. Extrae la foto de producto directamente de Amazon España (vía ASIN o búsqueda orgánica con headers reales).
-    2. Descarga la imagen en alta resolución a 'public/img/{slug}.jpg'.
-    3. Si Amazon bloquea con 503/Captcha, fallback a OpenAI DALL-E 3 (fotografía de estudio sin marca).
-    4. Fallback final local de categoría si todo lo anterior falla.
-    Retorna (ruta_publica_imagen, asin_detectado).
+    Pipeline blindado de obtención y validación de imagen (garantiza 0 imágenes vacías o de 1x1px):
+    1. Extracción directa desde Amazon España + validación Pillow (>=5KB, >=250x250px, no plana).
+    2. Fallback API de Pixabay con término en inglés del producto/categoría + validación Pillow.
+    3. Fallback OpenAI DALL-E 3 + validación Pillow.
+    4. Fallback Pollinations AI + validación Pillow.
+    5. Copia verificada de fotografía real de categoría a 'public/img/{slug}.jpg'.
     """
     os.makedirs(PUBLIC_IMG_DIR, exist_ok=True)
     nombre_archivo = f"{slug}.jpg"
     ruta_disco = os.path.join(PUBLIC_IMG_DIR, nombre_archivo)
     ruta_publica = f"/img/{nombre_archivo}"
 
-    # 1. Extracción directa desde Amazon (Objetivo Principal de Negocio)
+    # 1. Extracción directa desde Amazon (Objetivo Principal)
     img_url_amazon, asin_detectado = extraer_imagen_y_asin_amazon(keyword=keyword, asin=asin_amazon)
     if img_url_amazon:
         try:
             descargar_imagen(img_url_amazon, ruta_disco)
-            if memoria_imagenes is not None:
-                memoria_imagenes.add(img_url_amazon)
-                memoria_imagenes.add(ruta_publica)
-            print(f"    [Amazon OK] Imagen oficial del producto descargada con éxito: {ruta_publica}")
-            return ruta_publica, asin_detectado
+            if validar_imagen_visual(ruta_disco):
+                if memoria_imagenes is not None:
+                    memoria_imagenes.add(img_url_amazon)
+                    memoria_imagenes.add(ruta_publica)
+                print(f"    [Amazon OK] Imagen oficial validada y guardada con éxito: {ruta_publica}")
+                return ruta_publica, asin_detectado
         except Exception as e:
-            print(f"    [Aviso Descarga Amazon] Error descargando imagen de Amazon ({img_url_amazon}): {e}")
+            print(f"    [Aviso Descarga Amazon] Imagen descartada o error ({img_url_amazon}): {e}")
 
-    # 2. Fallback Seguro: Generación con OpenAI DALL-E 3 (Sin marcas erróneas)
-    print(f"    [Fallback Activo] Amazon no devolvió imagen. Intentando generar con OpenAI...")
+    # 2. Fallback Obligatorio a API de Imágenes (Pixabay) con validación Pillow
+    print(f"    [Fallback Pixabay] Buscando fotografía real validada para '{keyword}'...")
+    termino_en = obtener_termino_ingles_pixabay(keyword, categoria)
+    cat_queries = MAPA_QUERIES_PIXABAY_CATEGORIA.get(categoria.lower(), ["modern product photography", "home technology"])
+    candidatas_queries = [q for q in [termino_en] + cat_queries if q]
+
+    for q in candidatas_queries:
+        hits = buscar_imagen_pixabay(q)
+        for h in hits:
+            img_url = h.get("largeImageURL") or h.get("webformatURL")
+            if not img_url or (memoria_imagenes is not None and img_url in memoria_imagenes):
+                continue
+            try:
+                descargar_imagen(img_url, ruta_disco)
+                if validar_imagen_visual(ruta_disco):
+                    if memoria_imagenes is not None:
+                        memoria_imagenes.add(img_url)
+                        memoria_imagenes.add(ruta_publica)
+                    print(f"    [Pixabay OK] Fotografía real validada con Pillow: {ruta_publica} (Query: '{q}')")
+                    return ruta_publica, asin_detectado
+            except Exception as e:
+                print(f"    [Aviso Pixabay] Candidata descartada ({img_url}): {e}")
+                continue
+
+    # 3. Fallback OpenAI DALL-E 3 con validación Pillow
+    print(f"    [Fallback OpenAI] Intentando generar imagen con DALL-E 3...")
     img_dalle = generar_imagen_fallback_openai(keyword=keyword, categoria=categoria, ruta_destino=ruta_disco)
-    if img_dalle and os.path.exists(ruta_disco):
+    if img_dalle and validar_imagen_visual(ruta_disco):
         if memoria_imagenes is not None:
             memoria_imagenes.add(ruta_publica)
         return ruta_publica, asin_detectado
 
-    # 3. Fallback Final: Imagen genérica local por categoría
-    fallback = obtener_imagen_fallback(categoria)
-    print(f"    [Imagen Fallback Local] Asignada imagen local de categoría: {fallback}")
-    return fallback, asin_detectado
+    # 4. Fallback Pollinations AI con validación Pillow
+    img_poll = generar_imagen_fallback_pollinations(termino_en=termino_en, ruta_destino=ruta_disco)
+    if img_poll and validar_imagen_visual(ruta_disco):
+        if memoria_imagenes is not None:
+            memoria_imagenes.add(ruta_publica)
+        return ruta_publica, asin_detectado
+
+    # 5. Respaldo fotográfico local validado (copiado a public/img/{slug}.jpg)
+    fallback_rel = obtener_imagen_fallback(categoria)
+    fallback_disco = os.path.join("public", fallback_rel.lstrip("/\\"))
+    if os.path.exists(fallback_disco) and validar_imagen_visual(fallback_disco):
+        shutil.copyfile(fallback_disco, ruta_disco)
+        print(f"    [Fallback Fotográfico Local] Copiada imagen real validada a: {ruta_publica}")
+        return ruta_publica, asin_detectado
+
+    raise RuntimeError(f"No se pudo obtener ninguna imagen válida (>5KB y dimensiones reales) para '{keyword}'. Se aborta guardado para evitar artículos corruptos.")
 
 
 # ==============================================================================

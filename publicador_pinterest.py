@@ -13,12 +13,14 @@ import os
 import re
 import csv
 import sys
+import json
 import base64
 import argparse
 import unicodedata
 from datetime import datetime
 from typing import Optional, Dict
 import requests
+from PIL import Image, ImageStat
 
 # Forzar UTF-8 en consolas Windows
 try:
@@ -202,7 +204,7 @@ def publicar_pin(
         "Content-Type": "application/json",
     }
 
-    # Construir fuente multimedia: priorizar base64 si el archivo local existe (evita 404 antes de que Vercel despliegue)
+    # Validar que el Pin local no esté corrupto ni vacío antes de enviarlo a la API
     media_source_url = {
         "source_type": "image_url",
         "url": url_imagen_pin,
@@ -210,6 +212,20 @@ def publicar_pin(
     media_source_b64 = None
     if pin_local_path and os.path.exists(pin_local_path):
         try:
+            peso = os.path.getsize(pin_local_path)
+            if peso < 5120:
+                print(f"[ERROR VALIDACIÓN PIN] El archivo local '{pin_local_path}' pesa menos de 5KB ({peso}B). Abortando subida de imagen corrupta.")
+                return {"error": "corrupt_pin_size"}
+            with Image.open(pin_local_path) as im:
+                w, h = im.size
+                if w < 500 or h < 500:
+                    print(f"[ERROR VALIDACIÓN PIN] Dimensiones inválidas ({w}x{h}px) en '{pin_local_path}'.")
+                    return {"error": "corrupt_pin_dimensions"}
+                centro = im.crop((100, 620, 900, 880)).convert("RGB")
+                if max(ImageStat.Stat(centro).stddev) < 5.0:
+                    print(f"[ERROR VALIDACIÓN PIN] El Pin '{pin_local_path}' contiene un fondo plano vacío/corrupto. Se rechaza su publicación.")
+                    return {"error": "corrupt_pin_flat_background"}
+
             with open(pin_local_path, "rb") as img_f:
                 b64_data = base64.b64encode(img_f.read()).decode("utf-8")
             media_source_b64 = {
@@ -217,7 +233,8 @@ def publicar_pin(
                 "content_type": "image/jpeg",
                 "data": b64_data,
             }
-        except Exception:
+        except Exception as val_err:
+            print(f"[AVISO VALIDACIÓN PIN] No se pudo procesar '{pin_local_path}' en base64: {val_err}")
             media_source_b64 = None
 
     payload = {
@@ -234,6 +251,7 @@ def publicar_pin(
     print(f"• Tablero (Board ID): {target_board_id}")
     print(f"• Título: {titulo}")
     print(f"• Enlace del Artículo: {url_articulo}")
+    print(f"• Archivo Local Pin: {pin_local_path}")
     print(f"• URL Imagen en Vercel: {url_imagen_pin}")
     print("-" * 70)
 
@@ -242,42 +260,47 @@ def publicar_pin(
         "https://api-sandbox.pinterest.com/v5/pins",
     ]
 
-    r = None
-    for url_api in endpoints:
-        try:
-            r = requests.post(url_api, json=payload, headers=headers, timeout=25)
-            # Si falló con base64 por validación de esquema pero el token es válido, reintentar con image_url
-            if r.status_code == 400 and media_source_b64 is not None:
-                payload_url = dict(payload, media_source=media_source_url)
-                r = requests.post(url_api, json=payload_url, headers=headers, timeout=25)
-            if r.status_code in (200, 201):
-                break
-            # Si es error de permisos/trial en producción (401/403), probamos Sandbox
-            if r.status_code not in (401, 403):
-                break
-        except requests.RequestException as e:
-            print(f"[ERROR DE RED] No se pudo conectar con {url_api}: {e}\n")
+    try:
+        r = None
+        for url_api in endpoints:
+            try:
+                r = requests.post(url_api, json=payload, headers=headers, timeout=25)
+                if r.status_code == 400 and media_source_b64 is not None:
+                    print(f"[Aviso API Pinterest] Reintentando envío mediante image_url en {url_api}...")
+                    payload_url = dict(payload, media_source=media_source_url)
+                    r = requests.post(url_api, json=payload_url, headers=headers, timeout=25)
+                if r.status_code in (200, 201):
+                    break
+                if r.status_code not in (401, 403):
+                    break
+            except requests.RequestException as req_err:
+                print(f"[ERROR DE RED PINTEREST] Falló la conexión con {url_api}: {req_err}")
 
-    if r is None:
-        return {"error": "network_error"}
+        if r is None:
+            print("[ERROR CRÍTICO PINTEREST] No se obtuvo respuesta de ningún endpoint de Pinterest.")
+            return {"error": "network_error"}
 
-    if r.status_code in (200, 201):
-        pin_data = r.json()
-        pin_id = pin_data.get("id")
-        print(f"\n[ÉXITO] ¡Pin publicado correctamente en Pinterest!")
-        print(f"• Pin ID: {pin_id}")
-        print(f"• Enlace directo al Pin: https://www.pinterest.com/pin/{pin_id}/")
-        print("=" * 70 + "\n")
-        return pin_data
-    else:
-        print(f"\n[ERROR {r.status_code}] Pinterest rechazó la publicación:")
-        try:
-            err_data = r.json()
-            print(f"Detalle: {err_data}")
-            return err_data
-        except Exception:
-            print(f"Respuesta: {r.text}")
-            return {"error": r.text}
+        if r.status_code in (200, 201):
+            pin_data = r.json()
+            pin_id = pin_data.get("id")
+            print(f"\n[ÉXITO] ¡Pin publicado correctamente en Pinterest!")
+            print(f"• Pin ID: {pin_id}")
+            print(f"• Enlace directo al Pin: https://www.pinterest.com/pin/{pin_id}/")
+            print("=" * 70 + "\n")
+            return pin_data
+        else:
+            print(f"\n[ERROR API PINTEREST - HTTP {r.status_code}] Pinterest rechazó la publicación:")
+            try:
+                err_json = r.json()
+                print("Response JSON exacto de Pinterest:")
+                print(json.dumps(err_json, indent=2, ensure_ascii=False))
+                return err_json
+            except Exception:
+                print(f"Respuesta cruda (No-JSON): {r.text}")
+                return {"status_code": r.status_code, "raw_response": r.text}
+    except Exception as e:
+        print(f"\n[EXCEPCIÓN EN PUBLICADOR PINTEREST] Error inesperado al llamar a la API: {e}")
+        return {"error": str(e)}
 
 
 def main():
