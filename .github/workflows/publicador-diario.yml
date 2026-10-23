@@ -2,37 +2,51 @@ name: Publicador Automático Diario
 
 on:
   schedule:
-    - cron: '0 4 * * *' # Todos los días a las 04:00 AM UTC
+    - cron: '0 6 * * *' # Todos los días a las 06:00 AM UTC (08:00 AM en España CEST / 07:00 AM CET)
   workflow_dispatch: # Botón manual
+
+permissions:
+  contents: write
 
 jobs:
   generar-y-publicar:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    timeout-minutes: 30
     steps:
       - name: Checkout del repositorio
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Instalar Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Instalar dependencias
-        run: pip install openai requests Pillow
+        run: |
+          python -m pip install --upgrade pip
+          pip install openai requests Pillow beautifulsoup4 python-dotenv
 
-      - name: Ejecutar Piloto Automático
+      - name: Ejecutar Piloto Automático (6 Categorías + Pinterest)
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           AMAZON_AFFILIATE_TAG: ${{ secrets.AMAZON_AFFILIATE_TAG }}
+          PUBLIC_AMAZON_AFFILIATE_TAG: ${{ secrets.PUBLIC_AMAZON_AFFILIATE_TAG }}
+          PINTEREST_ACCESS_TOKEN: ${{ secrets.PINTEREST_ACCESS_TOKEN }}
+          PINTEREST_BOARD_ID: ${{ secrets.PINTEREST_BOARD_ID }}
+          PUBLIC_SITE_URL: ${{ secrets.PUBLIC_SITE_URL }}
         run: python autopiloto.py
 
       - name: Subir a Producción
         run: |
           git config --global user.name "Robot Recomendacion"
           git config --global user.email "bot@recomendacion.com"
-          git add src/content/blog/ public/img/ public/social/ keywords_productos.csv historial_productos.txt
-          git commit -m "🤖 Auto-publicación: Nuevos artículos y pines añadidos" || echo "Sin cambios"
-          git push
+          git add src/content/blog/ public/img/ public/social/ keywords_productos.csv historial_productos.txt memoria_imagenes.json
+          if git diff --staged --quiet; then
+            echo "Sin cambios nuevos para publicar."
+          else
+            git commit -m "🤖 Auto-publicación: Nuevos artículos y pines añadidos"
+            git pull --rebase origin main || true
+            git push origin main
+          fi

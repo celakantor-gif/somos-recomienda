@@ -1,18 +1,13 @@
 name: Generador Editorial por Lotes (Batch Processing)
 
 on:
-  schedule:
-    # Horarios programados para España (referencia UTC+2 actual / verano; en invierno UTC+1):
-    # 07:00 España (UTC+2) -> 05:00 UTC : noticias
-    - cron: '0 5 * * *'
-    # 10:30 España (UTC+2) -> 08:30 UTC : economia
-    - cron: '30 8 * * *'
-    # 14:00 España (UTC+2) -> 12:00 UTC : deportes
-    - cron: '0 12 * * *'
-    # 17:30 España (UTC+2) -> 15:30 UTC : salud
-    - cron: '30 15 * * *'
-    # 21:00 España (UTC+2) -> 19:00 UTC : consejos
-    - cron: '0 19 * * *'
+  # Cron desactivado (reemplazado por publicador-diario.yml con autopiloto.py + Pinterest)
+  # schedule:
+  #   - cron: '0 5 * * *'
+  #   - cron: '30 8 * * *'
+  #   - cron: '0 12 * * *'
+  #   - cron: '30 15 * * *'
+  #   - cron: '0 19 * * *'
 
   workflow_dispatch:
     inputs:

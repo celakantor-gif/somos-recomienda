@@ -1,9 +1,9 @@
 name: Publicacion Diaria Automatizada (Estrategia 4+1)
 
 on:
-  schedule:
-    # Todos los días a las 06:00 UTC (08:00 hora peninsular de España en verano)
-    - cron: '0 6 * * *'
+  # Cron desactivado (reemplazado por publicador-diario.yml con autopiloto.py + Pinterest)
+  # schedule:
+  #   - cron: '0 6 * * *'
   workflow_dispatch: # Permite lanzar la publicación manualmente con un clic en GitHub Actions
 
 permissions:

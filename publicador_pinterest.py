@@ -13,6 +13,7 @@ import os
 import re
 import csv
 import sys
+import base64
 import argparse
 import unicodedata
 from datetime import datetime
@@ -103,8 +104,10 @@ def obtener_datos_ultimo_articulo(csv_path: str = "keywords_productos.csv") -> D
     pin_local_path = os.path.join("public", "social", "pinterest", pin_filename)
     if not os.path.exists(pin_local_path):
         pin_filename_alt = f"pin_{slug_articulo}.jpg"
-        if os.path.exists(os.path.join("public", "social", "pinterest", pin_filename_alt)):
+        alt_local = os.path.join("public", "social", "pinterest", pin_filename_alt)
+        if os.path.exists(alt_local):
             pin_filename = pin_filename_alt
+            pin_local_path = alt_local
 
     url_articulo = f"{SITE_URL}/blog/{slug_articulo}/"
     url_imagen_pin = f"{SITE_URL}/social/pinterest/{pin_filename}"
@@ -125,10 +128,32 @@ def obtener_datos_ultimo_articulo(csv_path: str = "keywords_productos.csv") -> D
         "slug": slug_articulo,
         "url_articulo": url_articulo,
         "pin_filename": pin_filename,
+        "pin_local_path": pin_local_path,
         "url_imagen_pin": url_imagen_pin,
         "titulo_pin": titulo_pin,
         "descripcion_pin": descripcion_pin,
     }
+
+
+def _resolver_board_id_automatico(auth_token: str) -> str:
+    """Si no se configuró PINTEREST_BOARD_ID, intenta obtener el primer tablero disponible en la cuenta."""
+    headers = {
+        "Authorization": f"Bearer {auth_token}",
+        "Content-Type": "application/json",
+    }
+    for base_url in ("https://api.pinterest.com/v5", "https://api-sandbox.pinterest.com/v5"):
+        try:
+            r = requests.get(f"{base_url}/boards", headers=headers, params={"page_size": 10}, timeout=15)
+            if r.status_code == 200:
+                items = r.json().get("items", [])
+                if items:
+                    board_id = items[0].get("id", "")
+                    board_name = items[0].get("name", "Tablero")
+                    print(f"[Pinterest Auto-Board] Tablero detectado automáticamente: '{board_name}' (ID: {board_id})")
+                    return str(board_id)
+        except Exception:
+            pass
+    return ""
 
 
 def publicar_pin(
@@ -137,50 +162,70 @@ def publicar_pin(
     descripcion: Optional[str] = None,
     url_articulo: Optional[str] = None,
     url_imagen_pin: Optional[str] = None,
+    pin_local_path: Optional[str] = None,
     token: Optional[str] = None,
 ) -> dict:
     """
     Publica un nuevo Pin en el tablero especificado mediante la API v5 de Pinterest.
+    Soporta carga directa base64 desde archivo local (ideal antes del despliegue en Vercel)
+    y fallback automático a image_url y entorno Sandbox (Trial).
     """
     auth_token = (token or PINTEREST_TOKEN or "").strip()
     target_board_id = (board_id or PINTEREST_BOARD_ID or "").strip()
 
     if not auth_token:
-        print("\n[ERROR CRÍTICO] Falta la variable PINTEREST_ACCESS_TOKEN en tu archivo .env.")
+        print("\n[ERROR CRÍTICO] Falta la variable PINTEREST_ACCESS_TOKEN en el entorno o archivo .env.")
         print("Configura el token de acceso de Pinterest para continuar.\n")
         return {"error": "missing_token"}
 
     if not target_board_id:
-        print("\n[AVISO PINTEREST] Falta configurar PINTEREST_BOARD_ID en tu archivo .env.")
+        target_board_id = _resolver_board_id_automatico(auth_token)
+
+    if not target_board_id:
+        print("\n[AVISO PINTEREST] Falta configurar PINTEREST_BOARD_ID o no se pudo obtener automáticamente.")
         print("Para solucionarlo:")
         print("1. Ejecuta 'python obtener_tableros.py'")
         print("2. Copia el 'BOARD ID' del tablero donde desees publicar.")
-        print("3. Añade en tu archivo .env: PINTEREST_BOARD_ID=\"tu_board_id_aqui\"\n")
+        print("3. Añade en tu archivo .env y GitHub Secrets: PINTEREST_BOARD_ID=\"tu_board_id_aqui\"\n")
         return {"error": "missing_board_id"}
 
     # Resolver datos automáticos si faltan parámetros
-    if not titulo or not url_articulo or not url_imagen_pin:
-        datos = obtener_datos_ultimo_articulo()
-        titulo = titulo or datos["titulo_pin"]
-        descripcion = descripcion or datos["descripcion_pin"]
-        url_articulo = url_articulo or datos["url_articulo"]
-        url_imagen_pin = url_imagen_pin or datos["url_imagen_pin"]
+    datos = obtener_datos_ultimo_articulo()
+    titulo = titulo or datos["titulo_pin"]
+    descripcion = descripcion or datos["descripcion_pin"]
+    url_articulo = url_articulo or datos["url_articulo"]
+    url_imagen_pin = url_imagen_pin or datos["url_imagen_pin"]
+    pin_local_path = pin_local_path or datos.get("pin_local_path")
 
-    url_api = "https://api.pinterest.com/v5/pins"
     headers = {
         "Authorization": f"Bearer {auth_token}",
         "Content-Type": "application/json",
     }
+
+    # Construir fuente multimedia: priorizar base64 si el archivo local existe (evita 404 antes de que Vercel despliegue)
+    media_source_url = {
+        "source_type": "image_url",
+        "url": url_imagen_pin,
+    }
+    media_source_b64 = None
+    if pin_local_path and os.path.exists(pin_local_path):
+        try:
+            with open(pin_local_path, "rb") as img_f:
+                b64_data = base64.b64encode(img_f.read()).decode("utf-8")
+            media_source_b64 = {
+                "source_type": "image_base64",
+                "content_type": "image/jpeg",
+                "data": b64_data,
+            }
+        except Exception:
+            media_source_b64 = None
 
     payload = {
         "board_id": target_board_id,
         "title": titulo[:100],
         "description": (descripcion or "")[:800],
         "link": url_articulo,
-        "media_source": {
-            "source_type": "image_url",
-            "url": url_imagen_pin,
-        },
+        "media_source": media_source_b64 or media_source_url,
     }
 
     print("\n" + "=" * 70)
@@ -192,11 +237,29 @@ def publicar_pin(
     print(f"• URL Imagen en Vercel: {url_imagen_pin}")
     print("-" * 70)
 
-    try:
-        r = requests.post(url_api, json=payload, headers=headers, timeout=20)
-    except requests.RequestException as e:
-        print(f"[ERROR DE RED] No se pudo conectar con la API de Pinterest: {e}\n")
-        return {"error": str(e)}
+    endpoints = [
+        "https://api.pinterest.com/v5/pins",
+        "https://api-sandbox.pinterest.com/v5/pins",
+    ]
+
+    r = None
+    for url_api in endpoints:
+        try:
+            r = requests.post(url_api, json=payload, headers=headers, timeout=25)
+            # Si falló con base64 por validación de esquema pero el token es válido, reintentar con image_url
+            if r.status_code == 400 and media_source_b64 is not None:
+                payload_url = dict(payload, media_source=media_source_url)
+                r = requests.post(url_api, json=payload_url, headers=headers, timeout=25)
+            if r.status_code in (200, 201):
+                break
+            # Si es error de permisos/trial en producción (401/403), probamos Sandbox
+            if r.status_code not in (401, 403):
+                break
+        except requests.RequestException as e:
+            print(f"[ERROR DE RED] No se pudo conectar con {url_api}: {e}\n")
+
+    if r is None:
+        return {"error": "network_error"}
 
     if r.status_code in (200, 201):
         pin_data = r.json()
@@ -236,6 +299,7 @@ def main():
         descripcion=args.description or datos.get("descripcion_pin"),
         url_articulo=args.link or datos.get("url_articulo"),
         url_imagen_pin=args.image_url or datos.get("url_imagen_pin"),
+        pin_local_path=datos.get("pin_local_path"),
     )
 
 
