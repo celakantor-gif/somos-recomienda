@@ -36,9 +36,19 @@ try:
 except ImportError:
     pass
 
-SITE_URL = os.getenv("PUBLIC_SITE_URL", "https://somos-recomienda.vercel.app").rstrip("/")
-PINTEREST_TOKEN = os.getenv("PINTEREST_ACCESS_TOKEN")
-PINTEREST_BOARD_ID = os.getenv("PINTEREST_BOARD_ID")
+def _limpiar_secreto(valor: Optional[str]) -> str:
+    """Elimina espacios en blanco, saltos de línea, comillas accidentales y prefijo 'Bearer '."""
+    if not valor:
+        return ""
+    limpio = str(valor).strip().strip('"\'').strip()
+    if limpio.lower().startswith("bearer "):
+        limpio = limpio[7:].strip().strip('"\'').strip()
+    return "".join(limpio.split())
+
+
+SITE_URL = (os.getenv("PUBLIC_SITE_URL") or "https://somos-recomienda.vercel.app").strip().rstrip("/")
+PINTEREST_TOKEN = _limpiar_secreto(os.getenv("PINTEREST_ACCESS_TOKEN"))
+PINTEREST_BOARD_ID = _limpiar_secreto(os.getenv("PINTEREST_BOARD_ID"))
 
 
 def normalizar_para_comparar(texto: str) -> str:
@@ -172,13 +182,15 @@ def publicar_pin(
     Soporta carga directa base64 desde archivo local (ideal antes del despliegue en Vercel)
     y fallback automático a image_url y entorno Sandbox (Trial).
     """
-    auth_token = (token or PINTEREST_TOKEN or "").strip()
-    target_board_id = (board_id or PINTEREST_BOARD_ID or "").strip()
+    auth_token = _limpiar_secreto(token or os.getenv("PINTEREST_ACCESS_TOKEN") or PINTEREST_TOKEN)
+    target_board_id = _limpiar_secreto(board_id or os.getenv("PINTEREST_BOARD_ID") or PINTEREST_BOARD_ID)
 
     if not auth_token:
         print("\n[ERROR CRÍTICO] Falta la variable PINTEREST_ACCESS_TOKEN en el entorno o archivo .env.")
         print("Configura el token de acceso de Pinterest para continuar.\n")
         return {"error": "missing_token"}
+
+    print(f"[Pinterest Auth] Token cargado correctamente (longitud: {len(auth_token)} caracteres, prefijo: '{auth_token[:8]}...')")
 
     if not target_board_id:
         target_board_id = _resolver_board_id_automatico(auth_token)
@@ -261,21 +273,26 @@ def publicar_pin(
     ]
 
     try:
-        r = None
-        for url_api in endpoints:
+        r_principal = None
+        for idx_ep, url_api in enumerate(endpoints):
             try:
-                r = requests.post(url_api, json=payload, headers=headers, timeout=25)
-                if r.status_code == 400 and media_source_b64 is not None:
+                resp = requests.post(url_api, json=payload, headers=headers, timeout=25)
+                if resp.status_code == 400 and media_source_b64 is not None:
                     print(f"[Aviso API Pinterest] Reintentando envío mediante image_url en {url_api}...")
                     payload_url = dict(payload, media_source=media_source_url)
-                    r = requests.post(url_api, json=payload_url, headers=headers, timeout=25)
-                if r.status_code in (200, 201):
+                    resp = requests.post(url_api, json=payload_url, headers=headers, timeout=25)
+
+                if idx_ep == 0 or resp.status_code in (200, 201):
+                    r_principal = resp
+
+                if resp.status_code in (200, 201):
                     break
-                if r.status_code not in (401, 403):
-                    break
+                else:
+                    print(f"[Diagnóstico Pinterest] Endpoint '{url_api}' devolvió HTTP {resp.status_code}: {resp.text[:300]}")
             except requests.RequestException as req_err:
                 print(f"[ERROR DE RED PINTEREST] Falló la conexión con {url_api}: {req_err}")
 
+        r = r_principal
         if r is None:
             print("[ERROR CRÍTICO PINTEREST] No se obtuvo respuesta de ningún endpoint de Pinterest.")
             return {"error": "network_error"}

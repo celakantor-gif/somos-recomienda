@@ -12,6 +12,15 @@ jobs:
   generar-y-publicar:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      AMAZON_AFFILIATE_TAG: ${{ secrets.AMAZON_AFFILIATE_TAG }}
+      PUBLIC_AMAZON_AFFILIATE_TAG: ${{ secrets.PUBLIC_AMAZON_AFFILIATE_TAG }}
+      PINTEREST_ACCESS_TOKEN: ${{ secrets.PINTEREST_ACCESS_TOKEN }}
+      PINTEREST_BOARD_ID: ${{ secrets.PINTEREST_BOARD_ID }}
+      PUBLIC_SITE_URL: ${{ secrets.PUBLIC_SITE_URL }}
+
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v4
